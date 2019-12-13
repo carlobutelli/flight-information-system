@@ -1,0 +1,14 @@
+version: '3.1'
+services:
+  postgres:
+    container_name: postgres
+    image: postgres:10.6
+    privileged: true
+    environment:
+      - DEBUG=false
+      - DB_EXTENSION=plpgsql,pg_trgm
+      - POSTGRES_USER=tech
+      - POSTGRES_PASSWORD=d0nt4get
+      - POSTGRES_DB=assessment
+    ports:
+      - "5432:5432"
