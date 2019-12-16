@@ -6,6 +6,8 @@ import com.tech.api.ErrorResponse;
 import com.tech.api.payloads.ProbabilityPayload;
 import com.tech.exception.ResourceNotFoundException;
 import com.tech.model.Airline;
+import com.tech.model.Airline2Airport;
+import com.tech.repository.Airline2AirportRepository;
 import com.tech.repository.AirlineRepository;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -27,9 +29,11 @@ public class AirlineController {
 
     private final Logger log =  LoggerFactory.getLogger(AirlineController.class);
     private final AirlineRepository airlineRepository;
+    private final Airline2AirportRepository airline2AirportRepository;
 
-    public AirlineController(AirlineRepository airlineRepository) {
+    public AirlineController(AirlineRepository airlineRepository, Airline2AirportRepository airline2AirportRepository) {
         this.airlineRepository = airlineRepository;
+        this.airline2AirportRepository = airline2AirportRepository;
     }
 
     @PostMapping("/airline")
@@ -184,6 +188,42 @@ public class AirlineController {
     private void logInfoWithTransactionId(String transactionId, String message) {
         log.info(String.format("[AIRLINE] %s: %s", transactionId, message));
     }
+
+    @PostMapping("/airline/{airlineId}/arrivals-departures")
+    @ApiOperation(value = "Route to add arrival/departures to a given airline")
+    @ApiResponses(value = {
+            @ApiResponse(code = 500, message = "internal server error", response = ErrorResponse.class),
+            @ApiResponse(code = 200, message = "successful", response = BaseResponse.class)})
+    public ResponseEntity<?> addArrivalsDepartures(@PathVariable int airlineId,
+                                                   @RequestParam(value = "airportId") String airportId,
+                                                   @RequestParam(value = "numberOfArrivals") int numberOfArrivals,
+                                                   @RequestParam(value = "numberOfDepartures") int numberOfDepartures) {
+        String transactionId = generateTransactionId();
+        logInfoWithTransactionId(
+                transactionId,
+                "Got request to add arrival/departures"
+        );
+        try {
+            Airline2Airport a2a = airline2AirportRepository.save(
+                    new Airline2Airport(airlineId,airportId, numberOfArrivals, numberOfDepartures)
+            );
+
+            logInfoWithTransactionId(
+                    transactionId,
+                    String.format("Arrivals and departures successfully set for airline %s", a2a.getAirlineId())
+            );
+            BaseResponse meta = new BaseResponse(
+                    "CREATED",
+                    transactionId,
+                    String.format("Arrivals and departures successfully set for airline %s", a2a.getAirlineId()),
+                    200);
+            return new ResponseEntity<>(meta, HttpStatus.OK);
+        } catch (Exception e) {
+            log.error(String.format("[airline] %s: error %s", transactionId, e.getLocalizedMessage()));
+            return generateErrorResponse(500, "internal server error", transactionId);
+        }
+    }
+
 
     private String generateTransactionId() {
         return UUID.randomUUID().toString();
