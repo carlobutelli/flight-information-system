@@ -1,23 +1,31 @@
 package com.tech.model;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 import javax.persistence.*;
 import java.io.Serializable;
 import java.util.Objects;
 
 @Entity
 @IdClass(Airline2AirportId.class)
+@ApiModel(value = "Airline2Airport", description = "Represents the many2many relation between airline and airport")
 public class Airline2Airport implements Serializable {
 
     @Id
+    @ApiModelProperty(example = "1111")
     private int airlineId;
 
     @Id
+    @ApiModelProperty(example = "FCO")
     private String airportId;
 
     @Column(nullable = false)
+    @ApiModelProperty(example = "3")
     private int numOfArrivals;
 
     @Column(nullable = false)
+    @ApiModelProperty(example = "3")
     private int numOfDepartures;
 
     public Airline2Airport() {}

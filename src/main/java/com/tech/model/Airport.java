@@ -1,5 +1,7 @@
 package com.tech.model;
 
+import io.swagger.annotations.ApiModel;
+
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
@@ -8,6 +10,7 @@ import java.util.*;
 
 @Entity
 @Table(name="airport")
+@ApiModel(value = "Airport", description = "Relation to represent Airport object")
 public class Airport extends AuditModel {
     @Id
     @Pattern(regexp = "[A-Z]{3}+")

@@ -1,5 +1,8 @@
 package com.tech.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 import org.hibernate.validator.constraints.Range;
 
 import javax.persistence.*;
@@ -10,29 +13,45 @@ import java.time.LocalDateTime;
 // Flights n to 1 Airlines
 @Entity
 @Table(name = "flight")
+@ApiModel(value = "Flight", description = "Relation to represent Flight object")
 public class Flight extends AuditModel {
 
-    public enum StatusEnum {SCHEDULED, OPERATING, CANCELLED}
+    public enum StatusEnum {
+        SCHEDULED,
+        OPERATING,
+        DELAYED,
+        CANCELLED
+    }
 
     @Id
     @NotNull
     @Range(min=1, max=9999)
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "flight_number", updatable = false)
     private int flightNumber;
 
+    @ManyToOne
+    @JoinColumn(name = "source", insertable = false, updatable = false)
+    private Airport sourceAirport;
+
+    @Column(name = "source", columnDefinition = "text", length = 3, nullable = false)
     @Pattern(regexp = "[A-Z]{3}+")
-    @Column(columnDefinition = "text", length = 3, nullable = false)
+    @ApiModelProperty(example = "FCO")
     private String source;
 
+    @ManyToOne
+    @JoinColumn(name = "destination", insertable = false, updatable = false)
+    private Airport destinationAirport;
+
+    @Column(name = "destination", columnDefinition = "text", length = 3, nullable = false)
     @Pattern(regexp = "[A-Z]{3}+")
-    @Column(columnDefinition = "text", length = 3, nullable = false)
+    @ApiModelProperty(example = "JFK")
     private String destination;
 
     @Column(nullable = false)
-//    @Temporal(TemporalType.TIME)
     private LocalDateTime scheduledTime;
 
+    @JsonIgnore
     @Column(nullable = false)
     private LocalDateTime estimatedTime;
 
@@ -40,8 +59,24 @@ public class Flight extends AuditModel {
     private LocalDateTime actualTime;
 
     @Column
+    @JsonIgnore
     @Enumerated(EnumType.STRING)
     private StatusEnum status;
+
+    @Column(name = "fk_airline")
+    private int fk_airline;
+
+    @ManyToOne
+    @JoinColumn(name = "fk_airline", insertable = false, updatable = false)
+    private Airline airline;
+
+    public int getFk_airline() {
+        return fk_airline;
+    }
+
+    public void setFk_airline(int fk_airline) {
+        this.fk_airline = fk_airline;
+    }
 
     public Flight() { }
 
@@ -50,13 +85,15 @@ public class Flight extends AuditModel {
                   LocalDateTime scheduledTime,
                   LocalDateTime estimatedTime,
                   LocalDateTime actualTime,
-                  StatusEnum status) {
+                  StatusEnum status,
+                  int fk_airline) {
         this.source = source;
         this.destination = destination;
         this.scheduledTime = scheduledTime;
         this.estimatedTime = estimatedTime;
         this.actualTime = actualTime;
         this.status = status;
+        this.fk_airline = fk_airline;
     }
 
     public int getFlightNumber() {
@@ -79,6 +116,7 @@ public class Flight extends AuditModel {
         return estimatedTime;
     }
 
+    @JsonIgnore
     public void setEstimatedTime(LocalDateTime estimatedTime) {
         this.estimatedTime = estimatedTime;
     }
@@ -87,6 +125,7 @@ public class Flight extends AuditModel {
         return actualTime;
     }
 
+    @JsonIgnore
     public void setActualTime(LocalDateTime actualTime) {
         this.actualTime = actualTime;
     }

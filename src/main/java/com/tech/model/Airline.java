@@ -1,5 +1,8 @@
 package com.tech.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 import org.hibernate.validator.constraints.Range;
 
 import javax.persistence.*;
@@ -7,42 +10,55 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 import java.util.Objects;
+import java.util.Set;
 
 @Entity
 @Table(name = "airline")
+@ApiModel(value = "Airline", description = "Relation to represent Airline object")
 public class Airline extends AuditModel {
 
     @Id
+    @JsonIgnore
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
     @Column(unique = true)
     @Pattern(regexp = "[0-9]{3}+")
+    @ApiModelProperty(example = "055")
     private String icaoCode;
 
     @NotNull
     @Column(unique = true)
+    @ApiModelProperty(example = "Alitalia")
     private String name;
 
     @NotNull
     @Pattern(regexp = "[A-Z0-9]{2}+")
     @Column(unique = true)
+    @ApiModelProperty(example = "AZ")
     private String carrier;
 
     @NotNull
     @Size(max = 100)
     @Column(columnDefinition = "text")
+    @ApiModelProperty(example = "Italy")
     private String country;
 
     @Column
     @NotNull
     @Range(min = 0, max = 100)
+    @ApiModelProperty(example = "5")
     private int pDelayed;
 
     @Range(min = 0, max = 100)
     @Column
     @NotNull
+    @ApiModelProperty(example = "0")
     private int pCancelled;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "airline", cascade = CascadeType.ALL, orphanRemoval=true)
+    private Set<Flight> flights;
 
     public Airline() {
     }
@@ -117,7 +133,6 @@ public class Airline extends AuditModel {
     public void setCarrier(String carrier) {
         this.carrier = carrier;
     }
-
 
     @Override
     public boolean equals(Object o) {
