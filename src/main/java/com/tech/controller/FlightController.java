@@ -3,6 +3,7 @@ package com.tech.controller;
 import com.tech.api.BaseResponse;
 import com.tech.api.ErrorResponse;
 import com.tech.api.ListDataResponse;
+import com.tech.exception.ResourceNotFoundException;
 import com.tech.model.Flight;
 import com.tech.repository.FlightRepository;
 import io.swagger.annotations.Api;
@@ -13,20 +14,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.List;
-import java.util.Random;
 import java.util.UUID;
 
 @RestController
+@RequestMapping("/flights")
 @Api(value = "Manages flights objects")
 public class FlightController {
 
@@ -37,7 +33,7 @@ public class FlightController {
         this.flightRepository = flightRepository;
     }
 
-    @PostMapping("/flight")
+    @PostMapping
     @ApiOperation(value = "Route to add a new flight")
     @ApiResponses(value = {
             @ApiResponse(code = 500, message = "internal server error", response = ErrorResponse.class),
@@ -69,7 +65,7 @@ public class FlightController {
         }
     }
 
-    @GetMapping("/flight")
+    @GetMapping
     @ApiOperation(value = "Route to fetch the list of flights")
     @ApiResponses(value = {
             @ApiResponse(code = 500, message = "internal server error", response = ErrorResponse.class),
@@ -93,6 +89,64 @@ public class FlightController {
             log.error(String.format("[flights] %s: error %s", transactionId, e.getMessage()));
             return generateErrorResponse(500, "internal server error", transactionId);
         }
+    }
+
+    @PutMapping("/{flightNumber}")
+    @ApiOperation(value = "Route to update flight")
+    @ApiResponses(value = {
+            @ApiResponse(code = 404, message = "resource not found", response = ErrorResponse.class),
+            @ApiResponse(code = 500, message = "internal server error", response = ErrorResponse.class),
+            @ApiResponse(code = 200, message = "success", response = BaseResponse.class)})
+    public ResponseEntity<?> updateFlight(@PathVariable int flightNumber, @Valid @RequestBody Flight flightRequest) {
+        String transactionId = generateTransactionId();
+        logInfoWithTransactionId(
+                transactionId,
+                "Got request to update given flight"
+        );
+        try {
+            return flightRepository.findById(flightNumber).map(flight -> {
+                flight.setDestination(flightRequest.getDestination());
+                flight.setFk_airline(flightRequest.getFk_airline());
+                flight.setScheduledTime(flightRequest.getScheduledTime());
+                flight.setSource(flightRequest.getSource());
+                flightRepository.save(flight);
+                BaseResponse meta = new BaseResponse(
+                        "UPDATED",
+                        transactionId,
+                        String.format("flight %s successfully updated", flight.getFlightNumber()),
+                        200);
+                return new ResponseEntity<>(meta, HttpStatus.OK);
+            }).orElseThrow(() -> new ResourceNotFoundException("Flight " + flightNumber + " not found"));
+        } catch (ResourceNotFoundException e) {
+            log.error(String.format("[ERROR] %s flight %s not found: %s", transactionId, flightNumber, e));
+            return generateErrorResponse(404, "resource not found", transactionId);
+        } catch (Exception e) {
+            log.error(String.format("[airline] %s: error %s", transactionId, e.getMessage()));
+            return generateErrorResponse(500, "internal server error", transactionId);
+        }
+    }
+
+    @DeleteMapping("/{flightNumber}")
+    @ApiOperation(value = "Route to delete given flight")
+    @ApiResponses(value = {
+            @ApiResponse(code = 404, message = "resource not found", response = ErrorResponse.class),
+            @ApiResponse(code = 500, message = "internal server error", response = ErrorResponse.class),
+            @ApiResponse(code = 200, message = "success", response = BaseResponse.class)})
+    public ResponseEntity<?> deleteFlight(@PathVariable int flightNumber) {
+        String transactionId = generateTransactionId();
+        logInfoWithTransactionId(
+                transactionId,
+                String.format("Got request to delete flight %s", flightNumber)
+        );
+        return flightRepository.findById(flightNumber).map(flight -> {
+            flightRepository.delete(flight);
+            BaseResponse meta = new BaseResponse(
+                    "DELETED",
+                    transactionId,
+                    String.format("flight %s successfully deleted", flightNumber),
+                    200);
+            return new ResponseEntity<>(meta, HttpStatus.OK);
+        }).orElseThrow(() -> new ResourceNotFoundException("Flight " + flightNumber + " not found"));
     }
 
     private void logInfoWithTransactionId(String transactionId, String message) {
