@@ -31,6 +31,11 @@ Application will be locally served at the following
 http://localhost:8080/swagger
 ```
 
+# Healthchecks available at
+```$xslt
+http://localhost:8080/actuator/health
+```
+
 # Requirements
 - Docker 2.1+
 - Maven 3.6+

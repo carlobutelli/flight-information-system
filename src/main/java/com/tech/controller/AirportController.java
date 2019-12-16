@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
+@RequestMapping("/airports")
 @Api(value = "Manages Airports objects")
 public class AirportController {
     private final Logger log =  LoggerFactory.getLogger(AirportController.class);
@@ -30,7 +31,7 @@ public class AirportController {
         this.airportRepository = airportRepository;
     }
 
-    @PostMapping("/airport")
+    @PostMapping
     @ApiOperation(value = "Route to add a new airport")
     @ApiResponses(value = {
             @ApiResponse(code = 500, message = "internal server error", response = ErrorResponse.class),
@@ -60,7 +61,7 @@ public class AirportController {
 
     }
 
-    @GetMapping("/airport")
+    @GetMapping
     @ApiOperation(value = "Route to fetch the list of airports")
     @ApiResponses(value = {
             @ApiResponse(code = 500, message = "internal server error", response = ErrorResponse.class),
@@ -86,7 +87,7 @@ public class AirportController {
         }
     }
 
-    @PutMapping("/airport/{airportId}")
+    @PutMapping("/{airportId}")
     @ApiOperation(value = "Route to update airport")
     @ApiResponses(value = {
             @ApiResponse(code = 404, message = "resource not found", response = ErrorResponse.class),
