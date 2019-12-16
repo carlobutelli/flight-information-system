@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
+@RequestMapping("/airlines")
 @Api(value = "Manages Airlines objects")
 public class AirlineController {
 
@@ -36,7 +37,7 @@ public class AirlineController {
         this.airline2AirportRepository = airline2AirportRepository;
     }
 
-    @PostMapping("/airline")
+    @PostMapping
     @ApiOperation(value = "Route to add a new airline")
     @ApiResponses(value = {
             @ApiResponse(code = 500, message = "internal server error", response = ErrorResponse.class),
@@ -66,7 +67,7 @@ public class AirlineController {
         }
     }
 
-    @GetMapping("/airline")
+    @GetMapping
     @ApiOperation(value = "Route to fetch the list of airlines")
     @ApiResponses(value = {
             @ApiResponse(code = 500, message = "internal server error", response = ErrorResponse.class),
@@ -92,7 +93,7 @@ public class AirlineController {
         }
     }
 
-    @PatchMapping("/airline/{airlineId}")
+    @PatchMapping("/{airlineId}")
     @ApiOperation(value = "Route to update probabilities of given airline")
     @ApiResponses(value = {
             @ApiResponse(code = 404, message = "resource not found", response = ErrorResponse.class),
@@ -125,7 +126,7 @@ public class AirlineController {
         }
     }
 
-    @PutMapping("/airline/{airlineId}")
+    @PutMapping("/{airlineId}")
     @ApiOperation(value = "Route to update airline")
     @ApiResponses(value = {
             @ApiResponse(code = 404, message = "resource not found", response = ErrorResponse.class),
@@ -162,7 +163,7 @@ public class AirlineController {
         }
     }
 
-    @DeleteMapping("/airline/{airlineId}")
+    @DeleteMapping("/{airlineId}")
     @ApiOperation(value = "Route to delete given airline")
     @ApiResponses(value = {
             @ApiResponse(code = 404, message = "resource not found", response = ErrorResponse.class),
@@ -189,7 +190,7 @@ public class AirlineController {
         log.info(String.format("[AIRLINE] %s: %s", transactionId, message));
     }
 
-    @PostMapping("/airline/{airlineId}/arrivals-departures")
+    @PostMapping("/{airlineId}/arrivals-departures")
     @ApiOperation(value = "Route to add arrival/departures to a given airline")
     @ApiResponses(value = {
             @ApiResponse(code = 500, message = "internal server error", response = ErrorResponse.class),
