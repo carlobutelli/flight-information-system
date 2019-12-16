@@ -1,5 +1,10 @@
 package com.tech;
 
+import com.tech.model.Airport;
+import com.tech.repository.AirportRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -46,6 +51,33 @@ public class FlightSystemApplication {
     RouterFunction<ServerResponse> routerFunction() {
         return route(GET("/swagger"), req ->
                 ServerResponse.temporaryRedirect(URI.create("swagger-ui.html")).build());
+    }
+
+    @Bean
+    public CommandLineRunner mappingDemo(AirportRepository airportRepository) {
+        final Logger log = LoggerFactory.getLogger(FlightSystemApplication.class);
+        return args -> {
+
+            log.info("********* creation of airports data *********");
+
+            Airport fiumicino = airportRepository.save(
+                    new Airport("FCO", "Fiumicino International Airport Leonardo Da Vinci", "Rome", "Italy"));
+            log.info(String.format("+===> airport %s created", fiumicino.getIataCode()));
+
+            Airport ny = airportRepository.save(
+                    new Airport("JFK", "John F. Kennedy International Airport","New York", "United " +
+                            "States"));
+            log.info(String.format("+===> airport %s created", ny.getIataCode()));
+
+            Airport schipol = airportRepository.save(new Airport("AMS", "Schipol Airport",  "Amsterdam",
+                    "Netherlands"));
+            log.info(String.format("+===> airport %s created", schipol.getIataCode()));
+
+            Airport orly = airportRepository.save(new Airport("ORY", "Orly Airport",  "Paris", "France"));
+            log.info(String.format("+===> airport %s created", orly.getIataCode()));
+
+            log.info("********* airports data creation over *********");
+        };
     }
 
 }
