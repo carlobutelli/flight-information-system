@@ -9,6 +9,8 @@ import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -55,6 +57,16 @@ public class Airline extends AuditModel {
     @NotNull
     @ApiModelProperty(example = "0")
     private int pCancelled;
+
+    @ManyToMany(cascade = {
+            CascadeType.PERSIST,
+            CascadeType.MERGE
+    })
+    @JoinTable(name = "airline2airport",
+            joinColumns = @JoinColumn(name = "airlineId"),
+            inverseJoinColumns = @JoinColumn(name = "airportId")
+    )
+    private List<Airport> airports = new ArrayList<>();
 
     @JsonIgnore
     @OneToMany(mappedBy = "airline", cascade = CascadeType.ALL, orphanRemoval=true)
