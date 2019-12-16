@@ -29,7 +29,7 @@ java -jar target/flight-system-information-simulator.jar
 # Documentation API
 Application will be locally served at the following
 ```$xslt
-http://localhost:8081/swagger
+http://localhost:8080/swagger
 ```
 
 # Requirements
