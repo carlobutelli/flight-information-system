@@ -28,8 +28,8 @@ public class SwaggerConfig {
 
     private ApiInfo apiEndPointsInfo() {
         return new ApiInfoBuilder()
-                .title("Assessment REST API Documentation")
-                .description("Tech Assessment")
+                .title("Flight System Information Simulator REST API Documentation")
+                .description("Flight System Information Simulator Assessment developed for Thales Group")
                 .contact(new Contact("Carlo Butelli", "", "dev.butelli@gmail.com"))
                 .license("Apache 2.0")
                 .licenseUrl("http://www.apache.org/licenses/LICENSE-2.0.html")
