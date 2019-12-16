@@ -31,6 +31,9 @@ public class Airport extends AuditModel {
     @Column
     private String country;
 
+    @ManyToMany(mappedBy = "airports")
+    private List<Airline> airlines = new ArrayList<>();
+
     public Airport() {}
 
     public Airport(@Pattern(regexp = "[A-Z]{3}+") String iataCode, String name, String city, String country) {
