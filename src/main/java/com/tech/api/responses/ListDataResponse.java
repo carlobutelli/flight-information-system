@@ -5,17 +5,17 @@ import io.swagger.annotations.ApiModel;
 
 import java.util.List;
 
-@ApiModel(value = "AirlineList", description = "Fetch list of available Airlines")
+@ApiModel(value = "Lista Data Response", description = "Response for list of objects")
 public class ListDataResponse {
 
     private BaseResponse meta;
 
-    private List<?> data;
+    private List<Object> data;
 
     public ListDataResponse() {
     }
 
-    public ListDataResponse(BaseResponse baseResponse, List<?> data) {
+    public ListDataResponse(BaseResponse baseResponse, List<Object> data) {
         this.meta = baseResponse;
         this.data = data;
     }
