@@ -63,7 +63,8 @@ public class SimulationController {
             List<Airline2Airport> airline2Airports =
                     airline2AirportRepository.findByAirportId(airportId);
 
-            String[] airportIds =  {"FCO", "JFK", "AMS", "ORY", "CNN", "BNE"};
+            List<String> airportIds = airportRepository.getAllIataCodes();
+            airportIds.remove(airportId);
 
             Random r = new Random();
             int lower = 1;
@@ -85,7 +86,7 @@ public class SimulationController {
                     LocalDateTime ldt = generateRandomLocalDateTime();
                     Flight flight = new Flight();
                     flight.setFlightNumber(r.nextInt(9999));
-                    flight.setSource(airportIds[new Random().nextInt(airportIds.length)]);
+                    flight.setSource(airportIds.get(new Random().nextInt(airportIds.size())));
                     flight.setDestination(airport.getIataCode());
                     flight.setFk_airline(airline.getId());
                     flight.setScheduledTime(ldt);
@@ -103,7 +104,7 @@ public class SimulationController {
                     Flight flight = new Flight();
                     flight.setFlightNumber(r.nextInt(9999));
                     flight.setSource(airport.getIataCode());
-                    flight.setDestination(airportId);
+                    flight.setDestination(airportIds.get(new Random().nextInt(airportIds.size())));
                     flight.setFk_airline(airline.getId());
                     flight.setScheduledTime(ldt);
                     flight.setDuration(duration);
