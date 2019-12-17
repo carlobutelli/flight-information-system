@@ -8,5 +8,7 @@ import java.util.List;
 
 public interface Airline2AirportRepository extends CrudRepository<Airline2Airport, Airline2AirportId> {
 
-    List<Airline2Airport> findByAirlineIdAndAirportId(int airlineId, String airportId);
+    Airline2Airport findByAirlineIdAndAirportId(int airlineId, String airportId);
+
+    List<Airline2Airport> findByAirportId(String airportId);
 }
