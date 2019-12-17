@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -78,7 +79,8 @@ public class AirportController {
                     transactionId,
                     "airports successfully retrieved",
                     200);
-            List<Airport> airports = airportRepository.findAll();
+            List<Object> airports = new ArrayList<>();
+            airports.add(airportRepository.findAll());
             ListDataResponse response = new ListDataResponse(meta, airports);
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {

@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -82,7 +83,8 @@ public class FlightController {
                     transactionId,
                     "flights successfully retrieved",
                     200);
-            List<Flight> flights = flightRepository.findAll();
+            List<Object> flights = new ArrayList<>();
+            flights.add(flightRepository.findAll());
             ListDataResponse response = new ListDataResponse(meta, flights);
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {

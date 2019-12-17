@@ -20,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -84,7 +85,8 @@ public class AirlineController {
                     transactionId,
                     "airlines successfully retrieved",
                     200);
-            List<Airline> airlines = airlineRepository.findAll();
+            List<Object> airlines = new ArrayList<>();
+            airlines.add(airlineRepository.findAll());
             ListDataResponse response = new ListDataResponse(meta, airlines);
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
