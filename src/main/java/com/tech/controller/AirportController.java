@@ -1,8 +1,8 @@
 package com.tech.controller;
 
-import com.tech.api.BaseResponse;
-import com.tech.api.ErrorResponse;
-import com.tech.api.ListDataResponse;
+import com.tech.api.responses.BaseResponse;
+import com.tech.api.responses.ErrorResponse;
+import com.tech.api.responses.ListDataResponse;
 import com.tech.exception.ResourceNotFoundException;
 import com.tech.model.Airport;
 import com.tech.repository.AirportRepository;
