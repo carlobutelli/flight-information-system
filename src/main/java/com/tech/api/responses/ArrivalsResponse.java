@@ -1,5 +1,7 @@
 package com.tech.api.responses;
 
+import com.tech.model.Flight;
+
 import javax.validation.constraints.NotNull;
 
 public class ArrivalsResponse {
@@ -19,7 +21,7 @@ public class ArrivalsResponse {
     private String actualTime;
 
     @NotNull
-    private String status;
+    private Flight.StatusEnum status;
 
     public ArrivalsResponse() {}
 
@@ -28,7 +30,7 @@ public class ArrivalsResponse {
                             @NotNull String scheduledTime,
                             @NotNull String estimatedTime,
                             @NotNull String actualTime,
-                            @NotNull String status) {
+                            @NotNull Flight.StatusEnum status) {
         this.flight = flight;
         this.source = source;
         this.scheduledTime = scheduledTime;
@@ -77,11 +79,11 @@ public class ArrivalsResponse {
         this.actualTime = actualTime;
     }
 
-    public String getStatus() {
+    public Flight.StatusEnum getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(Flight.StatusEnum status) {
         this.status = status;
     }
 }

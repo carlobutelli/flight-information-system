@@ -10,12 +10,10 @@ import com.tech.repository.Airline2AirportRepository;
 import com.tech.repository.AirlineRepository;
 import com.tech.repository.AirportRepository;
 import com.tech.repository.FlightRepository;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -52,7 +50,9 @@ public class SimulationController {
     @ApiResponses(value = {
             @ApiResponse(code = 500, message = "internal server error", response = ErrorResponse.class),
             @ApiResponse(code = 201, message = "created", response = BaseResponse.class)})
-    public ResponseEntity<?> createSimulationData(@Valid @RequestParam(value = "airportId") String airportId) {
+    public ResponseEntity<?> createSimulationData(@Valid @RequestParam(value = "airportId")
+                                                      @ApiParam(value = "Iata code airport", example = "FCO")
+                                                              String airportId) {
         String transactionId = generateTransactionId();
         try {
             logInfoWithTransactionId(transactionId, "requested creation of simulation data");
@@ -153,14 +153,16 @@ public class SimulationController {
     @ApiResponses(value = {
             @ApiResponse(code = 500, message = "internal server error", response = ErrorResponse.class),
             @ApiResponse(code = 200, message = "successful", response = SimulationResponse.class)})
-    public ResponseEntity<?> simulate(@PathVariable String airportId,
-                                      @RequestParam(value = "currentTime", required = false) String currentTime) {
+    public ResponseEntity<?> simulate(@PathVariable
+                                          @ApiParam(value = "Iata code airport", example = "FCO") String airportId,
+                                      @RequestParam(value = "currentTime", required = false)
+                                          @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+                                          @ApiParam(value = "custom current time", example = "2019-12-17T11:50")
+                                                  LocalDateTime currentTime) {
         String transactionId = generateTransactionId();
         try {
             if (currentTime == null) {
-                currentTime = LocalDateTime.now().toString();
-            } else if ( !currentTime.matches("(?:[0-1][0-9]|2[0-4]):[0-5]\\d")) {
-                throw new IllegalArgumentException("The time you entered was not valid");
+                currentTime = LocalDateTime.now();
             }
             logInfoWithTransactionId(transactionId, String.format("requested simulation at %s", currentTime));
 
@@ -182,14 +184,40 @@ public class SimulationController {
 
             List<ArrivalsResponse> arrivalsResponses = new ArrayList<>();
             for (Flight f: arrivalFlights) {
+                if(currentTime.isBefore(f.getScheduledTime())) {
+                    System.out.println(currentTime + " is SMALLER than " + f.getScheduledTime());
+                } else {
+                    System.out.println(currentTime + " is BIGGER than " + f.getScheduledTime());
+                }
                 Airline airline = airlineRepository.findOneById(f.getFk_airline());
                 ArrivalsResponse ar = new ArrivalsResponse();
                 ar.setFlight(airline.getCarrier() + f.getFlightNumber());
                 ar.setSource(f.getSource());
-                ar.setScheduledTime(f.getScheduledTime().getHour() + ":" + f.getScheduledTime().getMinute());
-                ar.setEstimatedTime(f.getEstimatedTime().getHour() + ":" + f.getEstimatedTime().getMinute());
-                ar.setActualTime(f.getActualTime().getHour() + ":" + f.getActualTime().getMinute());
-                ar.setStatus(f.getStatus().toString());
+
+                if( (f.getEstimatedTime().isBefore(currentTime) &&
+                        currentTime.isBefore(f.getEstimatedTime().plusHours(f.getDuration()))) &&
+                        !f.getStatus().toString().equals("OPERATING") ) {
+                    ar.setStatus(Flight.StatusEnum.OPERATING);
+                }
+                if(f.getStatus() == Flight.StatusEnum.OPERATING &&
+                        currentTime.isAfter(f.getActualTime().plusHours(f.getDuration())) ) {
+                    ar.setStatus(Flight.StatusEnum.SCHEDULED);
+                } else if(f.getStatus().equals(Flight.StatusEnum.SCHEDULED) && airline.getCancelledProbability() == 100) {
+                    ar.setStatus(Flight.StatusEnum.CANCELLED);
+                } else if(f.getStatus().equals(Flight.StatusEnum.SCHEDULED) && airline.getDelayedProbability() == 100) {
+                    ar.setStatus(Flight.StatusEnum.DELAYED);
+                }
+
+                ar.setScheduledTime(
+                        generateTimeForResponse(f.getScheduledTime().getHour(), f.getScheduledTime().getMinute())
+                );
+                ar.setEstimatedTime(
+                        generateTimeForResponse(f.getEstimatedTime().getHour(), f.getEstimatedTime().getMinute())
+                );
+                ar.setActualTime(
+                        generateTimeForResponse(f.getActualTime().getHour(), f.getActualTime().getMinute())
+                );
+                ar.setStatus(f.getStatus());
                 arrivalsResponses.add(ar);
             }
 
@@ -199,10 +227,31 @@ public class SimulationController {
                 DeparturesResponse dr = new DeparturesResponse();
                 dr.setFlight(airline.getCarrier() + f.getFlightNumber());
                 dr.setDestination(f.getDestination());
-                dr.setScheduledTime(f.getScheduledTime().getHour() + ":" + f.getScheduledTime().getMinute());
-                dr.setEstimatedTime(f.getEstimatedTime().getHour() + ":" + f.getEstimatedTime().getMinute());
-                dr.setActualTime(f.getActualTime().getHour() + ":" + f.getActualTime().getMinute());
-                dr.setStatus(f.getStatus().toString());
+
+                if( (f.getEstimatedTime().isBefore(currentTime) &&
+                        currentTime.isBefore(f.getEstimatedTime().plusHours(f.getDuration()))) &&
+                        !f.getStatus().toString().equals("OPERATING") ) {
+                    dr.setStatus(Flight.StatusEnum.OPERATING);
+                }
+                if(f.getStatus() == Flight.StatusEnum.OPERATING &&
+                        currentTime.isAfter(f.getActualTime().plusHours(f.getDuration())) ) {
+                    dr.setStatus(Flight.StatusEnum.SCHEDULED);
+                } else if(f.getStatus().equals(Flight.StatusEnum.SCHEDULED) && airline.getCancelledProbability() == 100) {
+                    dr.setStatus(Flight.StatusEnum.CANCELLED);
+                } else if(f.getStatus().equals(Flight.StatusEnum.SCHEDULED) && airline.getDelayedProbability() == 100) {
+                    dr.setStatus(Flight.StatusEnum.DELAYED);
+                }
+
+                dr.setScheduledTime(
+                        generateTimeForResponse(f.getScheduledTime().getHour(), f.getScheduledTime().getMinute())
+                );
+                dr.setEstimatedTime(
+                        generateTimeForResponse(f.getEstimatedTime().getHour(), f.getEstimatedTime().getMinute())
+                );
+                dr.setActualTime(
+                        generateTimeForResponse(f.getActualTime().getHour(), f.getActualTime().getMinute())
+                );
+                dr.setStatus(f.getStatus());
                 departuresResponses.add(dr);
             }
 
@@ -224,6 +273,10 @@ public class SimulationController {
             log.error(String.format("[SIMULATION] %s: error %s", transactionId, e.getLocalizedMessage()));
             return generateErrorResponse(500, "internal server error", transactionId);
         }
+    }
+
+    private String generateTimeForResponse(int hours, int minutes) {
+        return String.format("%s:%s", hours, minutes);
     }
 
     private void logInfoWithTransactionId(String transactionId, String message) {
