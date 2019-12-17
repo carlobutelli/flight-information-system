@@ -50,13 +50,13 @@ public class Airline extends AuditModel {
     @NotNull
     @Range(min = 0, max = 100)
     @ApiModelProperty(example = "5")
-    private int pDelayed;
+    private int delayedProbability;
 
     @Range(min = 0, max = 100)
     @Column
     @NotNull
     @ApiModelProperty(example = "0")
-    private int pCancelled;
+    private int cancelledProbability;
 
     @ManyToMany(cascade = {
             CascadeType.PERSIST,
@@ -76,14 +76,14 @@ public class Airline extends AuditModel {
     }
 
     public Airline(String icaoCode, String name, String carrier, String country,
-                   @Range(min = 0, max = 100) int pDelayed,
-                   @Range(min = 0, max = 100) int pCancelled) {
+                   @Range(min = 0, max = 100) int delayedProbability,
+                   @Range(min = 0, max = 100) int cancelledProbability) {
         this.icaoCode = icaoCode;
         this.name = name;
         this.carrier = carrier;
         this.country = country;
-        this.pDelayed = pDelayed;
-        this.pCancelled = pCancelled;
+        this.delayedProbability = delayedProbability;
+        this.cancelledProbability = cancelledProbability;
     }
 
     public int getId() {
@@ -114,20 +114,20 @@ public class Airline extends AuditModel {
         this.country = country;
     }
 
-    public int getpDelayed() {
-        return pDelayed;
+    public int getDelayedProbability() {
+        return delayedProbability;
     }
 
-    public void setpDelayed(int pDelayed) {
-        this.pDelayed = pDelayed;
+    public void setDelayedProbability(int delayedProbability) {
+        this.delayedProbability = delayedProbability;
     }
 
-    public int getpCancelled() {
-        return pCancelled;
+    public int getCancelledProbability() {
+        return cancelledProbability;
     }
 
-    public void setpCancelled(int pCancelled) {
-        this.pCancelled = pCancelled;
+    public void setCancelledProbability(int cancelledProbability) {
+        this.cancelledProbability = cancelledProbability;
     }
 
     public String getName() {
@@ -153,8 +153,8 @@ public class Airline extends AuditModel {
         com.tech.model.Airline airline = (com.tech.model.Airline) o;
         return id == airline.id &&
                 icaoCode.equals(airline.icaoCode) &&
-                pDelayed == airline.pDelayed &&
-                pCancelled == airline.pCancelled &&
+                delayedProbability == airline.delayedProbability &&
+                cancelledProbability == airline.cancelledProbability &&
                 name.equals(airline.name) &&
                 carrier.equals(airline.carrier) &&
                 country.equals(airline.country);
@@ -162,6 +162,6 @@ public class Airline extends AuditModel {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, icaoCode, name, carrier, country, pDelayed, pCancelled);
+        return Objects.hash(id, icaoCode, name, carrier, country, delayedProbability, cancelledProbability);
     }
 }
