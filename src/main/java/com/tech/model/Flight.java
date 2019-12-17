@@ -3,12 +3,12 @@ package com.tech.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import org.hibernate.validator.constraints.Range;
 
 import javax.persistence.*;
 import javax.validation.constraints.Pattern;
 import java.time.LocalDateTime;
 
-// Flights n to 1 Airlines
 @Entity
 @Table(name = "flight")
 @ApiModel(value = "Flight", description = "Relation to represent Flight object")
@@ -45,13 +45,17 @@ public class Flight extends AuditModel {
     private String destination;
 
     @Column(nullable = false)
+    @Range(max = 17)
+    private int duration;
+
+    @Column(nullable = false)
     private LocalDateTime scheduledTime;
 
     @JsonIgnore
-    @Column(nullable = false)
+    @Column
     private LocalDateTime estimatedTime;
 
-    @Column(nullable = false)
+    @Column
     private LocalDateTime actualTime;
 
     @Column
@@ -82,6 +86,7 @@ public class Flight extends AuditModel {
                   LocalDateTime estimatedTime,
                   LocalDateTime actualTime,
                   StatusEnum status,
+                  int duration,
                   int fk_airline) {
         this.source = source;
         this.destination = destination;
@@ -89,6 +94,7 @@ public class Flight extends AuditModel {
         this.estimatedTime = estimatedTime;
         this.actualTime = actualTime;
         this.status = status;
+        this.duration = duration;
         this.fk_airline = fk_airline;
     }
 
@@ -148,5 +154,13 @@ public class Flight extends AuditModel {
 
     public void setStatus(StatusEnum status) {
         this.status = status;
+    }
+
+    public int getDuration() {
+        return duration;
+    }
+
+    public void setDuration(int duration) {
+        this.duration = duration;
     }
 }
