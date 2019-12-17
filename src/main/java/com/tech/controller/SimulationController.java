@@ -86,6 +86,7 @@ public class SimulationController {
                     LocalDateTime ldt = generateRandomLocalDateTime();
                     Flight flight = new Flight();
                     flight.setFlightNumber(r.nextInt(9999));
+                    // set random airport for source
                     flight.setSource(airportIds.get(new Random().nextInt(airportIds.size())));
                     flight.setDestination(airport.getIataCode());
                     flight.setFk_airline(airline.getId());
@@ -104,6 +105,7 @@ public class SimulationController {
                     Flight flight = new Flight();
                     flight.setFlightNumber(r.nextInt(9999));
                     flight.setSource(airport.getIataCode());
+                    // set random airport for destination
                     flight.setDestination(airportIds.get(new Random().nextInt(airportIds.size())));
                     flight.setFk_airline(airline.getId());
                     flight.setScheduledTime(ldt);
@@ -185,30 +187,10 @@ public class SimulationController {
 
             List<ArrivalsResponse> arrivalsResponses = new ArrayList<>();
             for (Flight f: arrivalFlights) {
-                if(currentTime.isBefore(f.getScheduledTime())) {
-                    System.out.println(currentTime + " is SMALLER than " + f.getScheduledTime());
-                } else {
-                    System.out.println(currentTime + " is BIGGER than " + f.getScheduledTime());
-                }
                 Airline airline = airlineRepository.findOneById(f.getFk_airline());
                 ArrivalsResponse ar = new ArrivalsResponse();
                 ar.setFlight(airline.getCarrier() + f.getFlightNumber());
                 ar.setSource(f.getSource());
-
-                if( (f.getEstimatedTime().isBefore(currentTime) &&
-                        currentTime.isBefore(f.getEstimatedTime().plusHours(f.getDuration()))) &&
-                        !f.getStatus().toString().equals("OPERATING") ) {
-                    ar.setStatus(Flight.StatusEnum.OPERATING);
-                }
-                if(f.getStatus() == Flight.StatusEnum.OPERATING &&
-                        currentTime.isAfter(f.getActualTime().plusHours(f.getDuration())) ) {
-                    ar.setStatus(Flight.StatusEnum.SCHEDULED);
-                } else if(f.getStatus().equals(Flight.StatusEnum.SCHEDULED) && airline.getCancelledProbability() == 100) {
-                    ar.setStatus(Flight.StatusEnum.CANCELLED);
-                } else if(f.getStatus().equals(Flight.StatusEnum.SCHEDULED) && airline.getDelayedProbability() == 100) {
-                    ar.setStatus(Flight.StatusEnum.DELAYED);
-                }
-
                 ar.setScheduledTime(
                         generateTimeForResponse(f.getScheduledTime().getHour(), f.getScheduledTime().getMinute())
                 );
@@ -218,7 +200,23 @@ public class SimulationController {
                 ar.setActualTime(
                         generateTimeForResponse(f.getActualTime().getHour(), f.getActualTime().getMinute())
                 );
-                ar.setStatus(f.getStatus());
+
+                if(f.getStatus().equals(Flight.StatusEnum.SCHEDULED) && airline.getCancelledProbability() == 100) {
+                    ar.setStatus(Flight.StatusEnum.CANCELLED);
+                } else if( (f.getEstimatedTime().isBefore(currentTime) &&
+                        currentTime.isBefore(f.getEstimatedTime().plusHours(f.getDuration()))) &&
+                        !f.getStatus().toString().equals("OPERATING") ) {
+                    ar.setStatus(Flight.StatusEnum.OPERATING);
+                } else if(f.getStatus() == Flight.StatusEnum.OPERATING &&
+                        currentTime.isAfter(f.getActualTime().plusHours(f.getDuration())) ) {
+                    ar.setStatus(Flight.StatusEnum.SCHEDULED);
+                }  else if(f.getStatus().equals(Flight.StatusEnum.SCHEDULED) && airline.getDelayedProbability() == 100) {
+                    ar.setStatus(Flight.StatusEnum.DELAYED);
+                    ar.setEstimatedTime(generateTimeForResponse(currentTime.plusMinutes(17).getHour(),
+                            currentTime.plusMinutes(17).getMinute()));
+                    ar.setActualTime(generateTimeForResponse(currentTime.plusMinutes(17).getHour(),
+                            currentTime.plusMinutes(17).getMinute()));
+                } else ar.setStatus(f.getStatus());
                 arrivalsResponses.add(ar);
             }
 
@@ -229,20 +227,6 @@ public class SimulationController {
                 dr.setFlight(airline.getCarrier() + f.getFlightNumber());
                 dr.setDestination(f.getDestination());
 
-                if( (f.getEstimatedTime().isBefore(currentTime) &&
-                        currentTime.isBefore(f.getEstimatedTime().plusHours(f.getDuration()))) &&
-                        !f.getStatus().toString().equals("OPERATING") ) {
-                    dr.setStatus(Flight.StatusEnum.OPERATING);
-                }
-                if(f.getStatus() == Flight.StatusEnum.OPERATING &&
-                        currentTime.isAfter(f.getActualTime().plusHours(f.getDuration())) ) {
-                    dr.setStatus(Flight.StatusEnum.SCHEDULED);
-                } else if(f.getStatus().equals(Flight.StatusEnum.SCHEDULED) && airline.getCancelledProbability() == 100) {
-                    dr.setStatus(Flight.StatusEnum.CANCELLED);
-                } else if(f.getStatus().equals(Flight.StatusEnum.SCHEDULED) && airline.getDelayedProbability() == 100) {
-                    dr.setStatus(Flight.StatusEnum.DELAYED);
-                }
-
                 dr.setScheduledTime(
                         generateTimeForResponse(f.getScheduledTime().getHour(), f.getScheduledTime().getMinute())
                 );
@@ -252,7 +236,24 @@ public class SimulationController {
                 dr.setActualTime(
                         generateTimeForResponse(f.getActualTime().getHour(), f.getActualTime().getMinute())
                 );
-                dr.setStatus(f.getStatus());
+
+                if(f.getStatus().equals(Flight.StatusEnum.SCHEDULED) && airline.getCancelledProbability() == 100) {
+                    dr.setStatus(Flight.StatusEnum.CANCELLED);
+                } else if( (f.getEstimatedTime().isBefore(currentTime) &&
+                        currentTime.isBefore(f.getEstimatedTime().plusHours(f.getDuration()))) &&
+                        !f.getStatus().toString().equals("OPERATING") ) {
+                    dr.setStatus(Flight.StatusEnum.OPERATING);
+                } else if(f.getStatus() == Flight.StatusEnum.OPERATING &&
+                        currentTime.isAfter(f.getActualTime().plusHours(f.getDuration())) ) {
+                    dr.setStatus(Flight.StatusEnum.SCHEDULED);
+                }  else if(f.getStatus().equals(Flight.StatusEnum.SCHEDULED) && airline.getDelayedProbability() == 100) {
+                    dr.setStatus(Flight.StatusEnum.DELAYED);
+                    dr.setEstimatedTime(generateTimeForResponse(currentTime.plusMinutes(17).getHour(),
+                            currentTime.plusMinutes(17).getMinute()));
+                    dr.setActualTime(generateTimeForResponse(currentTime.plusMinutes(17).getHour(),
+                            currentTime.plusMinutes(17).getMinute()));
+                } else dr.setStatus(f.getStatus());
+
                 departuresResponses.add(dr);
             }
 

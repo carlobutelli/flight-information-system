@@ -40,3 +40,26 @@ http://localhost:8080/actuator/health
 - Docker 2.1+
 - Maven 3.6+
 - Java 11
+
+# How it works
+The database is design with PostgreSQL and contains three main tables and a many to many relationship:
+- flight
+- airport
+- airline
+- airline2airport (many to many)
+### Relations
+- many2many between airport and airline since in every airport more airlines can arrives and departs and of course 
+every flight can have as source/destination more than one airport.
+- the airline2airport relation is the outcome from the many to many between airline and airport and it contains two 
+extra fields, numOfArrivals and numOfDepartures.
+- flight and airline are linked as one to many since a flight belongs to a single airline while the airline can 
+perform more flights.
+
+### Steps to reproduce
+- Every resource has the routes to CRUD operations
+- Airport's objects are created at runtime just for the POC
+- Add an airline through the API
+- Add the numbers of arrivals/departures to/from a given airport
+- In the simulation route generate data (it will generate flights based on the number of the arrival/departures for 
+every airline on the given airport)
+- run simulations based on a given airport providing the custom current time (not required by default)
