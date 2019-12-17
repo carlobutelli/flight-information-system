@@ -163,11 +163,23 @@ public class SimulationController {
                 throw new IllegalArgumentException("The time you entered was not valid");
             }
             logInfoWithTransactionId(transactionId, String.format("requested simulation at %s", currentTime));
+
+            logInfoWithTransactionId(
+                    transactionId,
+                    String.format("fetching departures flights for source %s", airportId)
+            );
+            List<Flight> departureFlights = flightRepository.findAllBySource(airportId);
             logInfoWithTransactionId(
                     transactionId,
                     String.format("fetching arrival flights for destination %s", airportId)
             );
             List<Flight> arrivalFlights = flightRepository.findAllByDestination(airportId);
+
+            if(departureFlights.isEmpty() && arrivalFlights.isEmpty()) {
+                log.error(String.format("[SIMULATION] %s: no data found", transactionId));
+                return generateErrorResponse(404, "no data found", transactionId);
+            }
+
             List<ArrivalsResponse> arrivalsResponses = new ArrayList<>();
             for (Flight f: arrivalFlights) {
                 Airline airline = airlineRepository.findOneById(f.getFk_airline());
@@ -182,11 +194,6 @@ public class SimulationController {
             }
 
             List<DeparturesResponse> departuresResponses = new ArrayList<>();
-            logInfoWithTransactionId(
-                    transactionId,
-                    String.format("fetching departures flights for source %s", airportId)
-            );
-            List<Flight> departureFlights = flightRepository.findAllBySource(airportId);
             for (Flight f: departureFlights) {
                 Airline airline = airlineRepository.findOneById(f.getFk_airline());
                 DeparturesResponse dr = new DeparturesResponse();
