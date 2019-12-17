@@ -65,16 +65,25 @@ public class FlightSystemApplication {
             log.info(String.format("+===> airport %s created", fiumicino.getIataCode()));
 
             Airport ny = airportRepository.save(
-                    new Airport("JFK", "John F. Kennedy International Airport","New York", "United " +
-                            "States"));
+                    new Airport("JFK", "John F. Kennedy International Airport","New York", "United States"));
             log.info(String.format("+===> airport %s created", ny.getIataCode()));
 
-            Airport schipol = airportRepository.save(new Airport("AMS", "Schipol Airport",  "Amsterdam",
+            Airport schipol = airportRepository.save(
+                    new Airport("AMS", "Schipol Airport",  "Amsterdam",
                     "Netherlands"));
             log.info(String.format("+===> airport %s created", schipol.getIataCode()));
 
-            Airport orly = airportRepository.save(new Airport("ORY", "Orly Airport",  "Paris", "France"));
+            Airport orly = airportRepository.save(
+                    new Airport("ORY", "Orly Airport",  "Paris", "France"));
             log.info(String.format("+===> airport %s created", orly.getIataCode()));
+
+            Airport brisbane = airportRepository.save(
+                    new Airport("BNE", "Brisbane Airport",  "Brisbane", "Australia"));
+            log.info(String.format("+===> airport %s created", brisbane.getIataCode()));
+
+            Airport kannur = airportRepository.save(
+                    new Airport("CNN", "Kannur Airport",  "Kannur", "India"));
+            log.info(String.format("+===> airport %s created", kannur.getIataCode()));
 
             log.info("********* airports data creation over *********");
         };

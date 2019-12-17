@@ -1,4 +1,4 @@
-package com.tech.api;
+package com.tech.api.responses;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModel;

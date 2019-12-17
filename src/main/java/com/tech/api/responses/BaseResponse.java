@@ -1,4 +1,4 @@
-package com.tech.api;
+package com.tech.api.responses;
 
 public class BaseResponse {
     private String status;

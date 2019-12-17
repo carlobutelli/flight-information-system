@@ -1,8 +1,8 @@
 package com.tech.controller;
 
-import com.tech.api.ListDataResponse;
-import com.tech.api.BaseResponse;
-import com.tech.api.ErrorResponse;
+import com.tech.api.responses.ListDataResponse;
+import com.tech.api.responses.BaseResponse;
+import com.tech.api.responses.ErrorResponse;
 import com.tech.api.payloads.ProbabilityPayload;
 import com.tech.exception.ResourceNotFoundException;
 import com.tech.model.Airline;
@@ -108,8 +108,8 @@ public class AirlineController {
         );
         try {
             Airline airline = airlineRepository.findOneById(airlineId);
-            airline.setpDelayed(probabilities.getpDelayed());
-            airline.setpCancelled(probabilities.getpCancelled());
+            airline.setDelayedProbability(probabilities.getDelayedProbability());
+            airline.setCancelledProbability(probabilities.getCancelledProbability());
             airlineRepository.save(airline);
             BaseResponse meta = new BaseResponse(
                     "UPDATED",
@@ -144,8 +144,8 @@ public class AirlineController {
                 airline.setName(airlineRequest.getName());
                 airline.setCarrier(airlineRequest.getCarrier());
                 airline.setCountry(airlineRequest.getCountry());
-                airline.setpDelayed(airlineRequest.getpDelayed());
-                airline.setpCancelled(airlineRequest.getpCancelled());
+                airline.setDelayedProbability(airlineRequest.getDelayedProbability());
+                airline.setCancelledProbability(airlineRequest.getCancelledProbability());
                 airlineRepository.save(airline);
                 BaseResponse meta = new BaseResponse(
                         "UPDATED",

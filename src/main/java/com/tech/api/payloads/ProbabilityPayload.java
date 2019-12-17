@@ -4,25 +4,25 @@ import javax.validation.constraints.NotNull;
 
 public class ProbabilityPayload {
     @NotNull
-    private int pDelayed;
+    private int delayedProbability;
     @NotNull
-    private int pCancelled;
+    private int cancelledProbability;
 
     public ProbabilityPayload() {}
 
-    public int getpDelayed() {
-        return pDelayed;
+    public int getDelayedProbability() {
+        return delayedProbability;
     }
 
-    public void setpDelayed(int pDelayed) {
-        this.pDelayed = pDelayed;
+    public void setDelayedProbability(int delayedProbability) {
+        this.delayedProbability = delayedProbability;
     }
 
-    public int getpCancelled() {
-        return pCancelled;
+    public int getCancelledProbability() {
+        return cancelledProbability;
     }
 
-    public void setpCancelled(int pCancelled) {
-        this.pCancelled = pCancelled;
+    public void setCancelledProbability(int cancelledProbability) {
+        this.cancelledProbability = cancelledProbability;
     }
 }
