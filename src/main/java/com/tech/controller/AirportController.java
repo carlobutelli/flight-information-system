@@ -17,7 +17,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -37,7 +36,7 @@ public class AirportController {
     @ApiResponses(value = {
             @ApiResponse(code = 500, message = "internal server error", response = ErrorResponse.class),
             @ApiResponse(code = 201, message = "created", response = BaseResponse.class)})
-    public ResponseEntity<?> createAirport(@Valid @RequestBody Airport airport) {
+    public ResponseEntity createAirport(@Valid @RequestBody Airport airport) {
         String transactionId = generateTransactionId();
         logInfoWithTransactionId(
                 transactionId,
@@ -67,7 +66,7 @@ public class AirportController {
     @ApiResponses(value = {
             @ApiResponse(code = 500, message = "internal server error", response = ErrorResponse.class),
             @ApiResponse(code = 200, message = "success", response = ListDataResponse.class)})
-    public ResponseEntity<ListDataResponse> getAirport() {
+    public ResponseEntity getAirport() {
         String transactionId = generateTransactionId();
         logInfoWithTransactionId(
                 transactionId,
@@ -79,8 +78,7 @@ public class AirportController {
                     transactionId,
                     "airports successfully retrieved",
                     200);
-            List<Object> airports = new ArrayList<>();
-            airports.add(airportRepository.findAll());
+            List<Airport> airports = airportRepository.findAll();
             ListDataResponse response = new ListDataResponse(meta, airports);
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
@@ -95,7 +93,7 @@ public class AirportController {
             @ApiResponse(code = 404, message = "resource not found", response = ErrorResponse.class),
             @ApiResponse(code = 500, message = "internal server error", response = ErrorResponse.class),
             @ApiResponse(code = 200, message = "success", response = BaseResponse.class)})
-    public ResponseEntity<?> updateAirport(@PathVariable String airportId, @Valid @RequestBody Airport airportRequest) {
+    public ResponseEntity updateAirport(@PathVariable String airportId, @Valid @RequestBody Airport airportRequest) {
         String transactionId = generateTransactionId();
         logInfoWithTransactionId(
                 transactionId,

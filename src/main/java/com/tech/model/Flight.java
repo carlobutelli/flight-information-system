@@ -3,9 +3,10 @@ package com.tech.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import org.hibernate.validator.constraints.Range;
+import org.hibernate.validator.constraints.Length;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import java.time.LocalDateTime;
 
@@ -16,7 +17,8 @@ public class Flight extends AuditModel {
 
     public enum StatusEnum {
         SCHEDULED,
-        OPERATING,
+        LANDED,
+        DEPARTED,
         DELAYED,
         CANCELLED
     }
@@ -30,7 +32,9 @@ public class Flight extends AuditModel {
     @JoinColumn(name = "source", insertable = false, updatable = false)
     private Airport sourceAirport;
 
-    @Column(name = "source", columnDefinition = "text", length = 3, nullable = false)
+    @NotNull
+    @Length(max = 3)
+    @Column(name = "source", columnDefinition = "text")
     @Pattern(regexp = "[A-Z]{3}+")
     @ApiModelProperty(example = "FCO")
     private String source;
@@ -39,16 +43,15 @@ public class Flight extends AuditModel {
     @JoinColumn(name = "destination", insertable = false, updatable = false)
     private Airport destinationAirport;
 
-    @Column(name = "destination", columnDefinition = "text", length = 3, nullable = false)
+    @NotNull
+    @Length(max = 3)
+    @Column(name = "destination", columnDefinition = "text")
     @Pattern(regexp = "[A-Z]{3}+")
     @ApiModelProperty(example = "JFK")
     private String destination;
 
-    @Column(nullable = false)
-    @Range(max = 17)
-    private int duration;
-
-    @Column(nullable = false)
+    @Column
+    @NotNull
     private LocalDateTime scheduledTime;
 
     @JsonIgnore
@@ -78,7 +81,8 @@ public class Flight extends AuditModel {
         this.fk_airline = fk_airline;
     }
 
-    public Flight() { }
+    public Flight() {
+    }
 
     public Flight(@Pattern(regexp = "[A-Z]{3}+") String source,
                   @Pattern(regexp = "[A-Z]{3}+") String destination,
@@ -86,7 +90,6 @@ public class Flight extends AuditModel {
                   LocalDateTime estimatedTime,
                   LocalDateTime actualTime,
                   StatusEnum status,
-                  int duration,
                   int fk_airline) {
         this.source = source;
         this.destination = destination;
@@ -94,16 +97,11 @@ public class Flight extends AuditModel {
         this.estimatedTime = estimatedTime;
         this.actualTime = actualTime;
         this.status = status;
-        this.duration = duration;
         this.fk_airline = fk_airline;
     }
 
     public int getFlightNumber() {
         return flightNumber;
-    }
-
-    public void setFlightNumber(int flightNumber) {
-        this.flightNumber = flightNumber;
     }
 
     public LocalDateTime getScheduledTime() {
@@ -154,13 +152,5 @@ public class Flight extends AuditModel {
 
     public void setStatus(StatusEnum status) {
         this.status = status;
-    }
-
-    public int getDuration() {
-        return duration;
-    }
-
-    public void setDuration(int duration) {
-        this.duration = duration;
     }
 }

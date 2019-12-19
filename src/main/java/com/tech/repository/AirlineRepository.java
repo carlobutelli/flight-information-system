@@ -13,8 +13,7 @@ public interface AirlineRepository extends JpaRepository<Airline, Integer> {
 
     @Modifying(clearAutomatically = true)
     @Query(value = "UPDATE airline SET delayedProbability = ?3, cancelledProbability = ?2 WHERE id = ?1", nativeQuery = true)
-    int updateProbabilities(int airlineId, int cancelledProbability, int delayedProbability);
-
-
+    int updateProbabilities(int airlineId, float cancelledProbability, float delayedProbability);
+    
     Airline findOneById(int id);
 }

@@ -20,7 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import java.util.ArrayList;
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
@@ -43,7 +43,7 @@ public class AirlineController {
     @ApiResponses(value = {
             @ApiResponse(code = 500, message = "internal server error", response = ErrorResponse.class),
             @ApiResponse(code = 201, message = "created", response = BaseResponse.class)})
-    public ResponseEntity<?> createAirline(@Valid @RequestBody Airline airline) {
+    public ResponseEntity createAirline(@Valid @RequestBody Airline airline) {
 
         String transactionId = generateTransactionId();
         logInfoWithTransactionId(
@@ -51,6 +51,9 @@ public class AirlineController {
                 "Got request to add new airline"
         );
         try {
+            if((airline.getCancelledProbability() + airline.getDelayedProbability()) > 1.0) {
+                throw new IOException();
+            }
             Airline newAirline = airlineRepository.save(airline);
             logInfoWithTransactionId(
                     transactionId,
@@ -62,6 +65,9 @@ public class AirlineController {
                     String.format("airline with id %s successfully created", newAirline.getId()),
                     201);
             return new ResponseEntity<>(meta, HttpStatus.CREATED);
+        } catch (IOException e) {
+            log.error(String.format("[airline] %s sum of given probabilities exceeded 1.0", transactionId));
+            return generateErrorResponse(400, "sum of probabilities exceeded 1.0", transactionId);
         } catch (Exception e) {
             log.error(String.format("[airline] %s: error %s", transactionId, e.getLocalizedMessage()));
             return generateErrorResponse(500, "internal server error", transactionId);
@@ -73,7 +79,7 @@ public class AirlineController {
     @ApiResponses(value = {
             @ApiResponse(code = 500, message = "internal server error", response = ErrorResponse.class),
             @ApiResponse(code = 200, message = "success", response = ListDataResponse.class)})
-    public ResponseEntity<ListDataResponse> getAirlines() {
+    public ResponseEntity getAirlines() {
         String transactionId = generateTransactionId();
         logInfoWithTransactionId(
                 transactionId,
@@ -85,8 +91,7 @@ public class AirlineController {
                     transactionId,
                     "airlines successfully retrieved",
                     200);
-            List<Object> airlines = new ArrayList<>();
-            airlines.add(airlineRepository.findAll());
+            List<?> airlines = airlineRepository.findAll();
             ListDataResponse response = new ListDataResponse(meta, airlines);
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
@@ -101,7 +106,7 @@ public class AirlineController {
             @ApiResponse(code = 404, message = "resource not found", response = ErrorResponse.class),
             @ApiResponse(code = 500, message = "internal server error", response = ErrorResponse.class),
             @ApiResponse(code = 200, message = "success", response = BaseResponse.class)})
-    public ResponseEntity<?> updateAirlineProbabilities(@PathVariable int airlineId,
+    public ResponseEntity updateAirlineProbabilities(@PathVariable int airlineId,
                                                         @Valid @RequestBody ProbabilityPayload probabilities) {
         String transactionId = generateTransactionId();
         logInfoWithTransactionId(
@@ -109,6 +114,9 @@ public class AirlineController {
                 String.format("Got request to update probabilities of airline %s", airlineId)
         );
         try {
+            if((probabilities.getCancelledProbability() + probabilities.getDelayedProbability()) > 1.0) {
+                throw new IOException();
+            }
             Airline airline = airlineRepository.findOneById(airlineId);
             airline.setDelayedProbability(probabilities.getDelayedProbability());
             airline.setCancelledProbability(probabilities.getCancelledProbability());
@@ -119,6 +127,9 @@ public class AirlineController {
                     String.format("airline %s successfully updated", airline.getId()),
                     200);
             return new ResponseEntity<>(meta, HttpStatus.OK);
+        } catch (IOException e) {
+            log.error(String.format("[airline] %s sum of given probabilities exceeded 1.0", transactionId));
+            return generateErrorResponse(400, "sum of probabilities exceeded 1.0", transactionId);
         } catch (ResourceNotFoundException e) {
             log.error(String.format("[airline] %s airline %s not found: %s", transactionId, airlineId, e));
             return generateErrorResponse(404, "resource not found", transactionId);
@@ -134,18 +145,20 @@ public class AirlineController {
             @ApiResponse(code = 404, message = "resource not found", response = ErrorResponse.class),
             @ApiResponse(code = 500, message = "internal server error", response = ErrorResponse.class),
             @ApiResponse(code = 200, message = "success", response = BaseResponse.class)})
-    public ResponseEntity<?> updateAirline(@PathVariable int airlineId, @Valid @RequestBody Airline airlineRequest) {
+    public ResponseEntity updateAirline(@PathVariable int airlineId, @Valid @RequestBody Airline airlineRequest) {
         String transactionId = generateTransactionId();
         logInfoWithTransactionId(
                 transactionId,
                 "Got request to update given airline"
         );
         try {
+            if((airlineRequest.getDelayedProbability() + airlineRequest.getCancelledProbability()) > 1.0) {
+                throw new IOException();
+            }
             return airlineRepository.findById(airlineId).map(airline -> {
                 airline.setIcaoCode(airlineRequest.getIcaoCode());
                 airline.setName(airlineRequest.getName());
                 airline.setCarrier(airlineRequest.getCarrier());
-                airline.setCountry(airlineRequest.getCountry());
                 airline.setDelayedProbability(airlineRequest.getDelayedProbability());
                 airline.setCancelledProbability(airlineRequest.getCancelledProbability());
                 airlineRepository.save(airline);
@@ -156,6 +169,9 @@ public class AirlineController {
                         200);
                 return new ResponseEntity<>(meta, HttpStatus.OK);
             }).orElseThrow(() -> new ResourceNotFoundException("Airline " + airlineId + " not found"));
+        } catch (IOException e) {
+            log.error(String.format("[airline] %s sum of given probabilities exceeded 1.0", transactionId));
+            return generateErrorResponse(400, "sum of probabilities exceeded 1.0", transactionId);
         } catch (ResourceNotFoundException e) {
             log.error(String.format("[ERROR] %s airline %s not found: %s", transactionId, airlineId, e));
             return generateErrorResponse(404, "resource not found", transactionId);
@@ -171,7 +187,7 @@ public class AirlineController {
             @ApiResponse(code = 404, message = "resource not found", response = ErrorResponse.class),
             @ApiResponse(code = 500, message = "internal server error", response = ErrorResponse.class),
             @ApiResponse(code = 200, message = "success", response = BaseResponse.class)})
-    public ResponseEntity<?> deleteAirline(@PathVariable int airlineId) {
+    public ResponseEntity deleteAirline(@PathVariable int airlineId) {
         String transactionId = generateTransactionId();
         logInfoWithTransactionId(
                 transactionId,
@@ -195,9 +211,9 @@ public class AirlineController {
     @PostMapping("/{airlineId}/arrivals-departures")
     @ApiOperation(value = "Route to add arrival/departures to a given airline")
     @ApiResponses(value = {
-            @ApiResponse(code = 500, message = "internal server error", response = ErrorResponse.class),
+            @ApiResponse(code = 400, message = "internal server error", response = ErrorResponse.class),
             @ApiResponse(code = 200, message = "successful", response = BaseResponse.class)})
-    public ResponseEntity<?> addArrivalsDepartures(@PathVariable int airlineId,
+    public ResponseEntity addArrivalsDepartures(@PathVariable int airlineId,
                                                    @RequestParam(value = "airportId") String airportId,
                                                    @RequestParam(value = "numberOfArrivals") int numberOfArrivals,
                                                    @RequestParam(value = "numberOfDepartures") int numberOfDepartures) {

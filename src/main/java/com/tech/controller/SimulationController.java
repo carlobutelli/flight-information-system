@@ -2,9 +2,7 @@ package com.tech.controller;
 
 import com.tech.api.responses.*;
 import com.tech.exception.ResourceNotFoundException;
-import com.tech.model.Airline;
 import com.tech.model.Airline2Airport;
-import com.tech.model.Airport;
 import com.tech.model.Flight;
 import com.tech.repository.Airline2AirportRepository;
 import com.tech.repository.AirlineRepository;
@@ -13,7 +11,6 @@ import com.tech.repository.FlightRepository;
 import io.swagger.annotations.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +19,7 @@ import javax.validation.Valid;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @RestController
@@ -30,95 +28,59 @@ import java.util.*;
 public class SimulationController {
 
     private final Logger log = LoggerFactory.getLogger(AirlineController.class);
-    private final AirlineRepository airlineRepository;
     private final AirportRepository airportRepository;
+    private final AirlineRepository airlineRepository;
     private final Airline2AirportRepository airline2AirportRepository;
     private final FlightRepository flightRepository;
+    private final Random r = new Random();
 
-    public SimulationController(AirlineRepository airlineRepository,
-                                AirportRepository airportRepository,
+    public SimulationController(AirportRepository airportRepository,
+                                AirlineRepository airlineRepository,
                                 Airline2AirportRepository airline2AirportRepository,
                                 FlightRepository flightRepository) {
-        this.airlineRepository = airlineRepository;
         this.airportRepository = airportRepository;
+        this.airlineRepository = airlineRepository;
         this.airline2AirportRepository = airline2AirportRepository;
         this.flightRepository = flightRepository;
     }
 
-    @PostMapping("/generate")
-    @ApiOperation(value = "Route to create simulation data")
+    @PostMapping("/flights/generate")
+    @ApiOperation(value = "Route to populate flight table to be used in simulation")
     @ApiResponses(value = {
             @ApiResponse(code = 500, message = "internal server error", response = ErrorResponse.class),
             @ApiResponse(code = 201, message = "created", response = BaseResponse.class)})
-    public ResponseEntity<?> createSimulationData(@Valid @RequestParam(value = "airportId")
-                                                      @ApiParam(value = "Iata code airport", example = "FCO")
-                                                              String airportId) {
+    public ResponseEntity createSimulationData(
+            @Valid @RequestParam(value = "airportId") @ApiParam(value = "Iata code", example = "FCO") String airportId) {
         String transactionId = generateTransactionId();
         try {
-            logInfoWithTransactionId(transactionId, "requested creation of simulation data");
+            logInfoWithTransactionId(transactionId, "init flight generation");
 
-            logInfoWithTransactionId(transactionId, "fetching airport");
-            Airport airport = airportRepository.findOneByIataCode(airportId);
+            logInfoWithTransactionId(transactionId, "retrieving number of arrivals and departures");
+            List<Airline2Airport> airline2Airports = airline2AirportRepository.findByAirportId(airportId);
+            if (airline2Airports == null || airline2Airports.isEmpty()) {
+                throw new ResourceNotFoundException(String.format("airport %s not found", airportId));
+            }
 
-            List<Airline2Airport> airline2Airports =
-                    airline2AirportRepository.findByAirportId(airportId);
-
+            // IataCodes to be used for random source/destination in arrivals/departures
             List<String> airportIds = airportRepository.getAllIataCodes();
             airportIds.remove(airportId);
 
-            Random r = new Random();
-            int lower = 1;
-            int upper = 17;
-
+            // for each combination airline - airport generate flights at first all set to SCHEDULED
             for (Airline2Airport a2a : airline2Airports) {
-                Airline airline = airlineRepository.findOneById(a2a.getAirlineId());
-                if(airline == null) {
-                    throw new ResourceNotFoundException(
-                            String.format("[SIMULATION] %s: airline %s not found", transactionId, a2a.getAirlineId())
-                    );
-                }
-                // Create arrivals flight for airline
-                logInfoWithTransactionId(
+                generateArrivalsAndDepartures(
                         transactionId,
-                        String.format("starting generation of arrivals for airline %s", airline.getId()));
-                for(int i=0; i < a2a.getNumOfArrivals(); i++) {
-                    int duration = (int) (Math.random() * (upper - lower)) + lower;
-                    LocalDateTime ldt = generateRandomLocalDateTime();
-                    Flight flight = new Flight();
-                    flight.setFlightNumber(r.nextInt(9999));
-                    // set random airport for source
-                    flight.setSource(airportIds.get(new Random().nextInt(airportIds.size())));
-                    flight.setDestination(airport.getIataCode());
-                    flight.setFk_airline(airline.getId());
-                    flight.setScheduledTime(ldt);
-                    flight.setDuration((int) (Math.random() * (upper - lower)) + lower);
-                    setActualTimeAndStatus(r, airline, duration, flight, ldt);
-                    flightRepository.save(flight);
-                }
-                // Create departing flight for airline
-                logInfoWithTransactionId(
-                        transactionId,
-                        String.format("starting generation of departures for airline %s", airline.getId()));
-                for(int i=0; i <a2a.getNumOfDepartures(); i++) {
-                    int duration = (int) (Math.random() * (upper - lower)) + lower;
-                    LocalDateTime ldt = generateRandomLocalDateTime();
-                    Flight flight = new Flight();
-                    flight.setFlightNumber(r.nextInt(9999));
-                    flight.setSource(airport.getIataCode());
-                    // set random airport for destination
-                    flight.setDestination(airportIds.get(new Random().nextInt(airportIds.size())));
-                    flight.setFk_airline(airline.getId());
-                    flight.setScheduledTime(ldt);
-                    flight.setDuration(duration);
-                    setActualTimeAndStatus(r, airline, duration, flight, ldt);
-                    flightRepository.save(flight);
-                }
+                        airportId,
+                        a2a.getAirlineId(),
+                        airportIds,
+                        a2a.getNumOfDepartures(),
+                        a2a.getNumOfArrivals()
+                );
             }
 
             BaseResponse meta = new BaseResponse(
                     "CREATED",
                     transactionId,
-                    "Simulation data created successfully",
+                    "Flights created successfully",
                     201);
             return new ResponseEntity<>(meta, HttpStatus.CREATED);
         } catch (Exception e) {
@@ -127,134 +89,157 @@ public class SimulationController {
         }
     }
 
-    private void setActualTimeAndStatus(Random r, Airline airline, int duration, Flight flight, LocalDateTime ldt) {
-        if (airline.getDelayedProbability() == 100) {
-            flight.setStatus(Flight.StatusEnum.DELAYED);
-            flight.setEstimatedTime(flight.getScheduledTime().plusMinutes(16));
-            flight.setActualTime(flight.getScheduledTime().plusMinutes(r.nextInt(180)));
-            if (flight.getActualTime().isBefore(LocalDateTime.now())) {
-                flight.setStatus(Flight.StatusEnum.OPERATING);
-            } else flight.setStatus(Flight.StatusEnum.SCHEDULED);
-        } else if (airline.getCancelledProbability() == 100) {
-            flight.setStatus(Flight.StatusEnum.CANCELLED);
-            flight.setEstimatedTime(null);
-            flight.setActualTime(null);
-        } else if (flight.getScheduledTime().isBefore(LocalDateTime.now()) &&
-                LocalDateTime.now().isBefore(flight.getScheduledTime().plusHours(duration))) {
-            flight.setStatus(Flight.StatusEnum.OPERATING);
-            flight.setEstimatedTime(ldt);
-            flight.setActualTime(ldt);
-        } else {
-            flight.setStatus(Flight.StatusEnum.SCHEDULED);
-            flight.setEstimatedTime(ldt);
-            flight.setActualTime(ldt);
+    @DeleteMapping("/flights")
+    @ApiOperation(value = "Route to clean flight table - WARNING! It will delete all the rows")
+    @ApiResponses(value = {
+            @ApiResponse(code = 404, message = "resource not found", response = ErrorResponse.class),
+            @ApiResponse(code = 500, message = "internal server error", response = ErrorResponse.class),
+            @ApiResponse(code = 200, message = "success", response = BaseResponse.class)})
+    public ResponseEntity deleteFlight() {
+        String transactionId = generateTransactionId();
+        logInfoWithTransactionId(transactionId, "got request to clean data into flight table");
+        try {
+            flightRepository.deleteAll();
+            BaseResponse meta = new BaseResponse(
+                    "DELETED",
+                    transactionId,
+                    "flight table successfully cleaned",
+                    200);
+            return new ResponseEntity<>(meta, HttpStatus.OK);
+        } catch (Exception e) {
+            log.error(String.format("[SIMULATION] %s: error %s", transactionId, e.getLocalizedMessage()));
+            return generateErrorResponse(500, "internal server error", transactionId);
         }
     }
 
-    @PostMapping("/{airportId}")
+    private void generateArrivalsAndDepartures(String transactionId,
+                                               String airportId,
+                                               int airlineId,
+                                               List<String> airportIds,
+                                               int departuresCount,
+                                               int arrivalsCount) {
+        logInfoWithTransactionId(
+                transactionId,
+                String.format("generating arrival flights for airline %s", airlineId)
+        );
+        for (int i = 0; i < departuresCount; i++) {
+            LocalDateTime ldt = generateRandomLocalDateTime();
+            Flight flight = new Flight();
+            flight.setFk_airline(airlineId);
+            flight.setSource(airportIds.get(new Random().nextInt(airportIds.size())));
+            flight.setDestination(airportId);
+            flight.setScheduledTime(ldt);
+            flight.setEstimatedTime(ldt);
+            flight.setActualTime(null);
+            flight.setStatus(Flight.StatusEnum.SCHEDULED);
+            flightRepository.save(flight);
+        }
+        logInfoWithTransactionId(
+                transactionId,
+                String.format("generating departures flights for airline %s", airlineId));
+        for (int i = 0; i < arrivalsCount; i++) {
+            LocalDateTime ldt = generateRandomLocalDateTime();
+            Flight flight = new Flight();
+            flight.setFk_airline(airlineId);
+            flight.setSource(airportId);
+            flight.setDestination(airportIds.get(new Random().nextInt(airportIds.size())));
+            flight.setScheduledTime(ldt);
+            flight.setEstimatedTime(ldt);
+            flight.setActualTime(null);
+            flight.setStatus(Flight.StatusEnum.SCHEDULED);
+            flightRepository.save(flight);
+        }
+    }
+
+
+    @PostMapping("/{airportId}/simulate")
     @ApiOperation(value = "Route to simulation system evolving by passing custom current time")
     @ApiResponses(value = {
             @ApiResponse(code = 500, message = "internal server error", response = ErrorResponse.class),
             @ApiResponse(code = 200, message = "successful", response = SimulationResponse.class)})
-    public ResponseEntity<?> simulate(@PathVariable
-                                          @ApiParam(value = "Iata code airport", example = "FCO") String airportId,
-                                      @RequestParam(value = "currentTime", required = false)
-                                          @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-                                          @ApiParam(value = "custom current time", example = "2019-12-17T11:50")
-                                                  LocalDateTime currentTime) {
+    public ResponseEntity simulate(@PathVariable
+                                   @ApiParam(value = "Iata code airport", example = "FCO") String airportId,
+                                   @RequestParam(value = "currentTime", required = false)
+                                   @ApiParam(value = "custom current time", example = "2019-12-19T11:50")
+                                           String customTime) {
         String transactionId = generateTransactionId();
         try {
-            if (currentTime == null) {
+            LocalDateTime currentTime;
+
+            if (customTime == null) {
                 currentTime = LocalDateTime.now();
+            } else {
+                currentTime = LocalDateTime.parse(customTime,DateTimeFormatter.ISO_DATE_TIME);
             }
             logInfoWithTransactionId(transactionId, String.format("requested simulation at %s", currentTime));
 
-            logInfoWithTransactionId(
-                    transactionId,
-                    String.format("fetching departures flights for source %s", airportId)
-            );
-            List<Flight> departureFlights = flightRepository.findAllBySource(airportId);
-            logInfoWithTransactionId(
-                    transactionId,
-                    String.format("fetching arrival flights for destination %s", airportId)
-            );
-            List<Flight> arrivalFlights = flightRepository.findAllByDestination(airportId);
+            List<ArrivalsResponse> arrivalsResponseList = new ArrayList<>();
 
-            if(departureFlights.isEmpty() && arrivalFlights.isEmpty()) {
+            List<Flight> arrivalFlights = flightRepository.findArrivalsByAirportScheduledForToday(airportId);
+            for (Flight f: arrivalFlights) {
+                if(f.getScheduledTime().isBefore(currentTime)) {
+                    f.setActualTime(f.getScheduledTime());
+                    f.setStatus(Flight.StatusEnum.LANDED);
+                } else {
+                    f.setActualTime(null);
+                    f.setStatus(Flight.StatusEnum.SCHEDULED);
+                }
+                Flight flight = flightRepository.save(f);
+                ArrivalsResponse ar = new ArrivalsResponse();
+                    ar.setFlight(String.valueOf(f.getFlightNumber()));
+                    if(flight.getActualTime() != null)
+                        ar.setActualTime(generateTimeForResponse(
+                                flight.getActualTime().getHour(),
+                                flight.getActualTime().getMinute())
+                        );
+                    ar.setSource(flight.getDestination());
+                    ar.setEstimatedTime(generateTimeForResponse(
+                            flight.getEstimatedTime().getHour(),
+                            flight.getEstimatedTime().getMinute())
+                    );
+                    ar.setScheduledTime(generateTimeForResponse(
+                            flight.getScheduledTime().getHour(),
+                            flight.getScheduledTime().getMinute())
+                    );
+                    ar.setStatus(flight.getStatus());
+                    arrivalsResponseList.add(ar);
+            }
+
+            List<DeparturesResponse> departuresResponseList = new ArrayList<>();
+
+            List<Flight> departureFlights = flightRepository.findDeparturesByAirportScheduledForToday(airportId);
+            for (Flight f: departureFlights) {
+                if(f.getScheduledTime().isBefore(currentTime)) {
+                    f.setActualTime(f.getScheduledTime());
+                    f.setStatus(Flight.StatusEnum.DEPARTED);
+                } else {
+                    f.setActualTime(null);
+                    f.setStatus(Flight.StatusEnum.SCHEDULED);
+                }
+                Flight flight = flightRepository.save(f);
+                DeparturesResponse dr = new DeparturesResponse();
+                dr.setFlight(String.valueOf(f.getFlightNumber()));
+                if(flight.getActualTime() != null)
+                    dr.setActualTime(generateTimeForResponse(
+                            flight.getActualTime().getHour(),
+                            flight.getActualTime().getMinute())
+                    );
+                dr.setDestination(flight.getDestination());
+                dr.setEstimatedTime(generateTimeForResponse(
+                        flight.getEstimatedTime().getHour(),
+                        flight.getEstimatedTime().getMinute())
+                );
+                dr.setScheduledTime(generateTimeForResponse(
+                        flight.getScheduledTime().getHour(),
+                        flight.getScheduledTime().getMinute())
+                );
+                dr.setStatus(flight.getStatus());
+                departuresResponseList.add(dr);
+            }
+
+            if (departureFlights.isEmpty() && arrivalFlights.isEmpty()) {
                 log.error(String.format("[SIMULATION] %s: no data found", transactionId));
                 return generateErrorResponse(404, "no data found", transactionId);
-            }
-
-            List<ArrivalsResponse> arrivalsResponses = new ArrayList<>();
-            for (Flight f: arrivalFlights) {
-                Airline airline = airlineRepository.findOneById(f.getFk_airline());
-                ArrivalsResponse ar = new ArrivalsResponse();
-                ar.setFlight(airline.getCarrier() + f.getFlightNumber());
-                ar.setSource(f.getSource());
-                ar.setScheduledTime(
-                        generateTimeForResponse(f.getScheduledTime().getHour(), f.getScheduledTime().getMinute())
-                );
-                ar.setEstimatedTime(
-                        generateTimeForResponse(f.getEstimatedTime().getHour(), f.getEstimatedTime().getMinute())
-                );
-                ar.setActualTime(
-                        generateTimeForResponse(f.getActualTime().getHour(), f.getActualTime().getMinute())
-                );
-
-                if(f.getStatus().equals(Flight.StatusEnum.SCHEDULED) && airline.getCancelledProbability() == 100) {
-                    ar.setStatus(Flight.StatusEnum.CANCELLED);
-                } else if( (f.getEstimatedTime().isBefore(currentTime) &&
-                        currentTime.isBefore(f.getEstimatedTime().plusHours(f.getDuration()))) &&
-                        !f.getStatus().toString().equals("OPERATING") ) {
-                    ar.setStatus(Flight.StatusEnum.OPERATING);
-                } else if(f.getStatus() == Flight.StatusEnum.OPERATING &&
-                        currentTime.isAfter(f.getActualTime().plusHours(f.getDuration())) ) {
-                    ar.setStatus(Flight.StatusEnum.SCHEDULED);
-                }  else if(f.getStatus().equals(Flight.StatusEnum.SCHEDULED) && airline.getDelayedProbability() == 100) {
-                    ar.setStatus(Flight.StatusEnum.DELAYED);
-                    ar.setEstimatedTime(generateTimeForResponse(currentTime.plusMinutes(17).getHour(),
-                            currentTime.plusMinutes(17).getMinute()));
-                    ar.setActualTime(generateTimeForResponse(currentTime.plusMinutes(17).getHour(),
-                            currentTime.plusMinutes(17).getMinute()));
-                } else ar.setStatus(f.getStatus());
-                arrivalsResponses.add(ar);
-            }
-
-            List<DeparturesResponse> departuresResponses = new ArrayList<>();
-            for (Flight f: departureFlights) {
-                Airline airline = airlineRepository.findOneById(f.getFk_airline());
-                DeparturesResponse dr = new DeparturesResponse();
-                dr.setFlight(airline.getCarrier() + f.getFlightNumber());
-                dr.setDestination(f.getDestination());
-
-                dr.setScheduledTime(
-                        generateTimeForResponse(f.getScheduledTime().getHour(), f.getScheduledTime().getMinute())
-                );
-                dr.setEstimatedTime(
-                        generateTimeForResponse(f.getEstimatedTime().getHour(), f.getEstimatedTime().getMinute())
-                );
-                dr.setActualTime(
-                        generateTimeForResponse(f.getActualTime().getHour(), f.getActualTime().getMinute())
-                );
-
-                if(f.getStatus().equals(Flight.StatusEnum.SCHEDULED) && airline.getCancelledProbability() == 100) {
-                    dr.setStatus(Flight.StatusEnum.CANCELLED);
-                } else if( (f.getEstimatedTime().isBefore(currentTime) &&
-                        currentTime.isBefore(f.getEstimatedTime().plusHours(f.getDuration()))) &&
-                        !f.getStatus().toString().equals("OPERATING") ) {
-                    dr.setStatus(Flight.StatusEnum.OPERATING);
-                } else if(f.getStatus() == Flight.StatusEnum.OPERATING &&
-                        currentTime.isAfter(f.getActualTime().plusHours(f.getDuration())) ) {
-                    dr.setStatus(Flight.StatusEnum.SCHEDULED);
-                }  else if(f.getStatus().equals(Flight.StatusEnum.SCHEDULED) && airline.getDelayedProbability() == 100) {
-                    dr.setStatus(Flight.StatusEnum.DELAYED);
-                    dr.setEstimatedTime(generateTimeForResponse(currentTime.plusMinutes(17).getHour(),
-                            currentTime.plusMinutes(17).getMinute()));
-                    dr.setActualTime(generateTimeForResponse(currentTime.plusMinutes(17).getHour(),
-                            currentTime.plusMinutes(17).getMinute()));
-                } else dr.setStatus(f.getStatus());
-
-                departuresResponses.add(dr);
             }
 
             BaseResponse meta = new BaseResponse(
@@ -262,10 +247,11 @@ public class SimulationController {
                     transactionId,
                     "Simulation executed successfully",
                     200);
+
             SimulationResponse simulationResponse = new SimulationResponse();
             simulationResponse.setMeta(meta);
-            simulationResponse.setArrivals(arrivalsResponses);
-            simulationResponse.setDepartures(departuresResponses);
+            simulationResponse.setArrivals(arrivalsResponseList);
+            simulationResponse.setDepartures(departuresResponseList);
             return new ResponseEntity<>(simulationResponse, HttpStatus.OK);
         } catch (IllegalArgumentException e) {
             log.error(String.format("[SIMULATION] %s: time format not valid %s", transactionId,
@@ -296,8 +282,15 @@ public class SimulationController {
     }
 
     private LocalDateTime generateRandomLocalDateTime() {
-        final Random random = new Random();
+        int max = 23;
+        int min = 6;
         return LocalDateTime
-                .of(LocalDate.now(), LocalTime.of(random.nextInt(24), 5 * (Math.round(random.nextInt(60) / 5)), 0, 0));
+                .of(
+                        LocalDate.now(),
+                        LocalTime.of(
+                                r.nextInt((max - min) + 1) + min,
+                                5 * (Math.round(r.nextInt(60) / 5)),
+                                0,
+                                0));
     }
 }

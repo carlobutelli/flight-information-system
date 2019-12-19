@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 
+import javax.servlet.http.HttpServletRequest;
+
 /*
 * This class handles exception specific and global exception in one single place
 * */
@@ -22,9 +24,9 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<?> globleExcpetionHandler(Exception ex, WebRequest request) {
+    public ResponseEntity<?> globleExcpetionHandler(Exception ex, HttpServletRequest request) {
         BaseResponseError errorDetails = new BaseResponseError(
-                new Date(), ex.getMessage(), request.getDescription(false)
+                new Date(), ex.getMessage(), request.getRequestURI()
         );
         return new ResponseEntity<>(errorDetails, HttpStatus.INTERNAL_SERVER_ERROR);
     }

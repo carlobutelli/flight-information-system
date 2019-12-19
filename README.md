@@ -3,7 +3,7 @@ Flight System Information Simulator developed for assessment due to Thales Group
 
 # Environment
 The software in order to run needs a few env vars to be set
-```$xslt
+```bash
 export SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/assessment
 export SPRING_DATASOURCE_USERNAME=tech
 export SPRING_DATASOURCE_PASSWORD=d0nt4get
@@ -11,15 +11,15 @@ export SPRING_DATASOURCE_PASSWORD=d0nt4get
 
 # Start up dev local
 Fire up the database in Docker with compose by running
-```$xslt
+```bash
 docker-compose up -d
 ```
 from the root dir launch the app locally with
-```$xslt
+```bash
 mvn spring-boot:run
 ```
 OR
-```$xslt
+```bash
 mvn dependency:tree
 mvn package
 java -jar target/flight-system-information-simulator.jar
@@ -27,12 +27,12 @@ java -jar target/flight-system-information-simulator.jar
 
 # Documentation API
 Application will be locally served at the following
-```$xslt
+```bash
 http://localhost:8080/swagger
 ```
 
 # Healthchecks available at
-```$xslt
+```bash
 http://localhost:8080/actuator/health
 ```
 
@@ -63,3 +63,8 @@ perform more flights.
 - In the simulation route generate data (it will generate flights based on the number of the arrival/departures for 
 every airline on the given airport)
 - run simulations based on a given airport providing the custom current time (not required by default)
+
+#### Routes explanation
+```bash
+/simulation/populate
+```

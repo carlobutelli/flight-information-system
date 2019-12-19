@@ -1,28 +1,36 @@
 package com.tech.api.payloads;
 
+import io.swagger.annotations.ApiModelProperty;
+import org.hibernate.validator.constraints.Range;
+
 import javax.validation.constraints.NotNull;
 
 public class ProbabilityPayload {
     @NotNull
-    private int delayedProbability;
+    @Range(min = 0, max = 1)
+    @ApiModelProperty(example = "0.0")
+    private float delayedProbability;
+
     @NotNull
-    private int cancelledProbability;
+    @Range(min = 0, max = 1)
+    @ApiModelProperty(example = "0.0")
+    private float cancelledProbability;
 
     public ProbabilityPayload() {}
 
-    public int getDelayedProbability() {
+    public float getDelayedProbability() {
         return delayedProbability;
     }
 
-    public void setDelayedProbability(int delayedProbability) {
+    public void setDelayedProbability(float delayedProbability) {
         this.delayedProbability = delayedProbability;
     }
 
-    public int getCancelledProbability() {
+    public float getCancelledProbability() {
         return cancelledProbability;
     }
 
-    public void setCancelledProbability(int cancelledProbability) {
+    public void setCancelledProbability(float cancelledProbability) {
         this.cancelledProbability = cancelledProbability;
     }
 }

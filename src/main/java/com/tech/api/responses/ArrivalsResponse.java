@@ -17,7 +17,6 @@ public class ArrivalsResponse {
     @NotNull
     private String estimatedTime;
 
-    @NotNull
     private String actualTime;
 
     @NotNull
@@ -25,12 +24,8 @@ public class ArrivalsResponse {
 
     public ArrivalsResponse() {}
 
-    public ArrivalsResponse(@NotNull String flight,
-                            @NotNull String source,
-                            @NotNull String scheduledTime,
-                            @NotNull String estimatedTime,
-                            @NotNull String actualTime,
-                            @NotNull Flight.StatusEnum status) {
+    public ArrivalsResponse(String flight, String source, String scheduledTime, String estimatedTime, String actualTime,
+                            Flight.StatusEnum status) {
         this.flight = flight;
         this.source = source;
         this.scheduledTime = scheduledTime;

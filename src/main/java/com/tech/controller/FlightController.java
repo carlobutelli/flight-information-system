@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -39,20 +38,16 @@ public class FlightController {
     @ApiResponses(value = {
             @ApiResponse(code = 500, message = "internal server error", response = ErrorResponse.class),
             @ApiResponse(code = 201, message = "created", response = BaseResponse.class)})
-    public ResponseEntity<?> createFlight(@Valid @RequestBody Flight flight) {
+    public ResponseEntity createFlight(@Valid @RequestBody Flight flight) {
         String transactionId = generateTransactionId();
         logInfoWithTransactionId(
                 transactionId,
                 "Got request to add new flight"
         );
         try {
-            flight.setEstimatedTime(flight.getScheduledTime());
-            flight.setActualTime(flight.getScheduledTime());
-            if (flight.getScheduledTime().isBefore(LocalDateTime.now())) {
-                flight.setStatus(Flight.StatusEnum.OPERATING);
-            } else {
-                flight.setStatus(Flight.StatusEnum.SCHEDULED);
-            }
+            flight.setEstimatedTime(LocalDateTime.now());
+            flight.setActualTime(null);
+            flight.setStatus(Flight.StatusEnum.SCHEDULED);
             Flight newFlight = flightRepository.save(flight);
             BaseResponse meta = new BaseResponse(
                     "CREATED",
@@ -71,7 +66,7 @@ public class FlightController {
     @ApiResponses(value = {
             @ApiResponse(code = 500, message = "internal server error", response = ErrorResponse.class),
             @ApiResponse(code = 200, message = "success", response = ListDataResponse.class)})
-    public ResponseEntity<ListDataResponse> getFlights() {
+    public ResponseEntity getFlights() {
         String transactionId = generateTransactionId();
         logInfoWithTransactionId(
                 transactionId,
@@ -83,8 +78,7 @@ public class FlightController {
                     transactionId,
                     "flights successfully retrieved",
                     200);
-            List<Object> flights = new ArrayList<>();
-            flights.add(flightRepository.findAll());
+            List<Flight> flights = flightRepository.findAll();
             ListDataResponse response = new ListDataResponse(meta, flights);
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
@@ -99,7 +93,7 @@ public class FlightController {
             @ApiResponse(code = 404, message = "resource not found", response = ErrorResponse.class),
             @ApiResponse(code = 500, message = "internal server error", response = ErrorResponse.class),
             @ApiResponse(code = 200, message = "success", response = BaseResponse.class)})
-    public ResponseEntity<?> updateFlight(@PathVariable int flightNumber, @Valid @RequestBody Flight flightRequest) {
+    public ResponseEntity updateFlight(@PathVariable int flightNumber, @Valid @RequestBody Flight flightRequest) {
         String transactionId = generateTransactionId();
         logInfoWithTransactionId(
                 transactionId,
@@ -119,9 +113,6 @@ public class FlightController {
                         200);
                 return new ResponseEntity<>(meta, HttpStatus.OK);
             }).orElseThrow(() -> new ResourceNotFoundException("Flight " + flightNumber + " not found"));
-        } catch (ResourceNotFoundException e) {
-            log.error(String.format("[ERROR] %s flight %s not found: %s", transactionId, flightNumber, e));
-            return generateErrorResponse(404, "resource not found", transactionId);
         } catch (Exception e) {
             log.error(String.format("[airline] %s: error %s", transactionId, e.getMessage()));
             return generateErrorResponse(500, "internal server error", transactionId);
@@ -134,11 +125,11 @@ public class FlightController {
             @ApiResponse(code = 404, message = "resource not found", response = ErrorResponse.class),
             @ApiResponse(code = 500, message = "internal server error", response = ErrorResponse.class),
             @ApiResponse(code = 200, message = "success", response = BaseResponse.class)})
-    public ResponseEntity<?> deleteFlight(@PathVariable int flightNumber) {
+    public ResponseEntity deleteFlight(@PathVariable int flightNumber) {
         String transactionId = generateTransactionId();
         logInfoWithTransactionId(
                 transactionId,
-                String.format("Got request to delete flight %s", flightNumber)
+                String.format("got request to delete flight %s", flightNumber)
         );
         return flightRepository.findById(flightNumber).map(flight -> {
             flightRepository.delete(flight);
@@ -149,6 +140,58 @@ public class FlightController {
                     200);
             return new ResponseEntity<>(meta, HttpStatus.OK);
         }).orElseThrow(() -> new ResourceNotFoundException("Flight " + flightNumber + " not found"));
+    }
+
+    @GetMapping("/airport/{airportId}/arrivals")
+    @ApiOperation(value = "Route to fetch the list of arrival flights for airport")
+    @ApiResponses(value = {
+            @ApiResponse(code = 500, message = "internal server error", response = ErrorResponse.class),
+            @ApiResponse(code = 200, message = "success", response = ListDataResponse.class)})
+    public ResponseEntity getArrivals(@PathVariable String airportId) {
+        String transactionId = generateTransactionId();
+        logInfoWithTransactionId(
+                transactionId,
+                "got new request to fetch list of arrival flights for airport"
+        );
+        try {
+            List<?> flights = flightRepository.findAllByDestination(airportId);
+            BaseResponse meta = new BaseResponse(
+                    "OK",
+                    transactionId,
+                    "arrivals successfully retrieved",
+                    200);
+            ListDataResponse response = new ListDataResponse(meta, flights);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (Exception e) {
+            log.error(String.format("[flights] %s: error %s", transactionId, e.getMessage()));
+            return generateErrorResponse(500, "internal server error", transactionId);
+        }
+    }
+
+    @GetMapping("/airport/{airportId}/departures")
+    @ApiOperation(value = "Route to fetch the list of departures flights for airport")
+    @ApiResponses(value = {
+            @ApiResponse(code = 500, message = "internal server error", response = ErrorResponse.class),
+            @ApiResponse(code = 200, message = "success", response = ListDataResponse.class)})
+    public ResponseEntity getDepartures(@PathVariable String airportId) {
+        String transactionId = generateTransactionId();
+        logInfoWithTransactionId(
+                transactionId,
+                "got new request to fetch list of departures flights for airport"
+        );
+        try {
+            List<?> flights = flightRepository.findAllBySource(airportId);
+            BaseResponse meta = new BaseResponse(
+                    "OK",
+                    transactionId,
+                    "departures successfully retrieved",
+                    200);
+            ListDataResponse response = new ListDataResponse(meta, flights);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (Exception e) {
+            log.error(String.format("[flights] %s: error %s", transactionId, e.getMessage()));
+            return generateErrorResponse(500, "internal server error", transactionId);
+        }
     }
 
     private void logInfoWithTransactionId(String transactionId, String message) {

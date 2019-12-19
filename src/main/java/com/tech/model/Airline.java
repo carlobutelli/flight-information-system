@@ -8,7 +8,6 @@ import org.hibernate.validator.constraints.Range;
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
-import javax.validation.constraints.Size;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -41,22 +40,16 @@ public class Airline extends AuditModel {
     private String carrier;
 
     @NotNull
-    @Size(max = 100)
-    @Column(columnDefinition = "text")
-    @ApiModelProperty(example = "Italy")
-    private String country;
+    @Range(min = 0, max = 1)
+    @Column(precision=1, scale=2)
+    @ApiModelProperty(example = "0.0")
+    private float delayedProbability;
 
-    @Column
     @NotNull
-    @Range(min = 0, max = 100)
-    @ApiModelProperty(example = "5")
-    private int delayedProbability;
-
-    @Range(min = 0, max = 100)
-    @Column
-    @NotNull
-    @ApiModelProperty(example = "0")
-    private int cancelledProbability;
+    @Range(min = 0, max = 1)
+    @Column(precision=1, scale=2)
+    @ApiModelProperty(example = "0.0")
+    private float cancelledProbability;
 
     @ManyToMany(cascade = {
             CascadeType.PERSIST,
@@ -75,13 +68,10 @@ public class Airline extends AuditModel {
     public Airline() {
     }
 
-    public Airline(String icaoCode, String name, String carrier, String country,
-                   @Range(min = 0, max = 100) int delayedProbability,
-                   @Range(min = 0, max = 100) int cancelledProbability) {
+    public Airline(String icaoCode, String name, String carrier, float delayedProbability, float cancelledProbability) {
         this.icaoCode = icaoCode;
         this.name = name;
         this.carrier = carrier;
-        this.country = country;
         this.delayedProbability = delayedProbability;
         this.cancelledProbability = cancelledProbability;
     }
@@ -106,27 +96,19 @@ public class Airline extends AuditModel {
         this.icaoCode = icaoCode;
     }
 
-    public String getCountry() {
-        return country;
-    }
-
-    public void setCountry(String country) {
-        this.country = country;
-    }
-
-    public int getDelayedProbability() {
+    public float getDelayedProbability() {
         return delayedProbability;
     }
 
-    public void setDelayedProbability(int delayedProbability) {
+    public void setDelayedProbability(float delayedProbability) {
         this.delayedProbability = delayedProbability;
     }
 
-    public int getCancelledProbability() {
+    public float getCancelledProbability() {
         return cancelledProbability;
     }
 
-    public void setCancelledProbability(int cancelledProbability) {
+    public void setCancelledProbability(float cancelledProbability) {
         this.cancelledProbability = cancelledProbability;
     }
 
@@ -156,12 +138,11 @@ public class Airline extends AuditModel {
                 delayedProbability == airline.delayedProbability &&
                 cancelledProbability == airline.cancelledProbability &&
                 name.equals(airline.name) &&
-                carrier.equals(airline.carrier) &&
-                country.equals(airline.country);
+                carrier.equals(airline.carrier);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, icaoCode, name, carrier, country, delayedProbability, cancelledProbability);
+        return Objects.hash(id, icaoCode, name, carrier, delayedProbability, cancelledProbability);
     }
 }

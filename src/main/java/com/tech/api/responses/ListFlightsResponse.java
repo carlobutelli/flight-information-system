@@ -1,21 +1,22 @@
 package com.tech.api.responses;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.tech.model.Flight;
 import io.swagger.annotations.ApiModel;
 
 import java.util.List;
 
-@ApiModel(value = "Lista Data Response", description = "Response for list of objects")
-public class ListDataResponse {
+@ApiModel(value = "Lista Flights Response", description = "Response for list of flights")
+public class ListFlightsResponse {
 
     private BaseResponse meta;
 
-    private List<?> data;
+    private List<Flight> data;
 
-    public ListDataResponse() {
+    public ListFlightsResponse() {
     }
 
-    public ListDataResponse(BaseResponse baseResponse, List<?> data) {
+    public ListFlightsResponse(BaseResponse baseResponse, List<Flight> data) {
         this.meta = baseResponse;
         this.data = data;
     }
