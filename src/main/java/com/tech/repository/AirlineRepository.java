@@ -14,6 +14,8 @@ public interface AirlineRepository extends JpaRepository<Airline, Integer> {
 
     @Query("select a " +
            "from Airline2Airport a2a JOIN Airline a on a2a.airlineId = a.id " +
-           "where a2a.airportId=:airportId")
+           "where a2a.airportId=:airportId " +
+           "and (a.delayedProbability <> 0 or a.cancelledProbability <> 0)"
+    )
     List<Airline> findAllAirlineByAirportId(String airportId);
 }

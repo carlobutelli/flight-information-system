@@ -306,6 +306,7 @@ public class SimulationController {
         DelayedCancelledArrays delayedCancelledArrays = new DelayedCancelledArrays();
 
         List<Airline> airlines = airlineRepository.findAllAirlineByAirportId(airportId);
+        log.info("Airlines: " + airlines.size());
 
         int numFlightsToBeDelayed = 0, numFlightsToBeSetCancelled = 0;
 
