@@ -4,6 +4,7 @@ import com.tech.api.responses.*;
 import com.tech.exception.ResourceNotFoundException;
 import com.tech.model.Airline;
 import com.tech.model.Airline2Airport;
+import com.tech.model.DelayedCancelledArrays;
 import com.tech.model.Flight;
 import com.tech.repository.Airline2AirportRepository;
 import com.tech.repository.AirlineRepository;
@@ -174,8 +175,11 @@ public class SimulationController {
             }
             logInfoWithTransactionId(transactionId, String.format("requested simulation at %s", currentTime));
 
-            List<Integer> flightsToBeSetDelayed = getFlightsToBeSetDelayed(airportId);
-            log.info(String.format("Flights to be delayed: %s", flightsToBeSetDelayed));
+            List<Integer> flightsToBeSetDelayed = getFlightsToBeSetDelayed(airportId).getDelayedFlights();
+            log.info(String.format("==> Flights to be delayed: %s", flightsToBeSetDelayed));
+
+            List<Integer> flightsToBeSetCancelled = getFlightsToBeSetDelayed(airportId).getCancelledFlights();
+            log.info(String.format("==> Flights to be cancelled: %s", flightsToBeSetCancelled));
 
             List<ArrivalsResponse> arrivalsResponseList = new ArrayList<>();
 
@@ -190,6 +194,9 @@ public class SimulationController {
                         f.setEstimatedTime(f.getScheduledTime().plusMinutes(20));
                         f.setStatus(Flight.StatusEnum.DELAYED);
                     }
+                } else if(flightsToBeSetCancelled.contains(f.getFlightNumber())) {
+                    f.setActualTime(null);
+                    f.setStatus(Flight.StatusEnum.CANCELLED);
                 } else {
                     if(f.getScheduledTime().isBefore(currentTime)) {
                         f.setActualTime(f.getScheduledTime());
@@ -232,6 +239,9 @@ public class SimulationController {
                         f.setEstimatedTime(f.getScheduledTime().plusMinutes(20));
                         f.setStatus(Flight.StatusEnum.DELAYED);
                     }
+                } else if(flightsToBeSetCancelled.contains(f.getFlightNumber())) {
+                    f.setActualTime(null);
+                    f.setStatus(Flight.StatusEnum.CANCELLED);
                 } else {
                     if(f.getScheduledTime().isBefore(currentTime)) {
                         f.setActualTime(f.getScheduledTime());
@@ -288,32 +298,51 @@ public class SimulationController {
         }
     }
 
-    private List<Integer> getFlightsToBeSetDelayed(
+    private DelayedCancelledArrays getFlightsToBeSetDelayed(
             @ApiParam(value = "Iata code airport", example = "FCO") @PathVariable String airportId) {
 
         List<Integer> flightsToBeSetDelayed = new ArrayList<>();
+        List<Integer> flightsToBeSetCancelled = new ArrayList<>();
+        DelayedCancelledArrays delayedCancelledArrays = new DelayedCancelledArrays();
 
         List<Airline> airlines = airlineRepository.findAllAirlineByAirportId(airportId);
 
-        int numFlightsToBeDelayed = 0;
+        int numFlightsToBeDelayed = 0, numFlightsToBeSetCancelled = 0;
+
         for (Airline airline : airlines) {
             List<Flight> flights = flightRepository.findAllFlightsByAirlineId(airline.getId());
-            log.info("Size ====> " + flights.size());
-            int[] flightArray = new int[flights.size()];
+            log.info(String.format("Airline has %s Flights: ", flights.size()));
+
+            ArrayList<Integer> baseNumberFlights = new ArrayList<>();
 
             if(airline.getDelayedProbability() != 0.0)
                 numFlightsToBeDelayed = (int) Math.round(airline.getDelayedProbability() * flights.size());
+
             log.info("Flights to be delayed: " + numFlightsToBeDelayed);
-            for (int i = 0; i < flights.size(); i++) {
-                flightArray[i] = flights.get(i).getFlightNumber();
+
+            if(airline.getCancelledProbability() != 0.0)
+                numFlightsToBeSetCancelled = (int) Math.round(airline.getCancelledProbability() * flights.size());
+
+            log.info("Flights to be cancelled: " + numFlightsToBeSetCancelled);
+
+            for (Flight flight : flights) {
+                baseNumberFlights.add(flight.getFlightNumber());
             }
+            log.info(String.format("base number flights %s: ", baseNumberFlights));
 
             for (int i = 0; i < numFlightsToBeDelayed; i++) {
-                flightsToBeSetDelayed.add(getRandomFlightNumber(flightArray));
+                int flightNumber = getRandomFlightNumber(baseNumberFlights);
+                flightsToBeSetDelayed.add(flightNumber);
             }
+            delayedCancelledArrays.setDelayedFlights(flightsToBeSetDelayed);
 
+            for (int i = 0; i < numFlightsToBeSetCancelled; i++) {
+                int flightNumber = getRandomFlightNumber(baseNumberFlights);
+                flightsToBeSetCancelled.add(flightNumber);
+            }
+            delayedCancelledArrays.setCancelledFlights(flightsToBeSetCancelled);
         }
-        return flightsToBeSetDelayed;
+        return delayedCancelledArrays;
     }
 
     private String generateTimeForResponse(int hours, int minutes) {
@@ -334,9 +363,13 @@ public class SimulationController {
         return ResponseEntity.status(statusCode).body(response);
     }
 
-    private static int getRandomFlightNumber(int[] array) {
-        int rnd = new Random().nextInt(array.length);
-        return array[rnd];
+    private static int getRandomFlightNumber(ArrayList<Integer> array) {
+        System.out.println(String.format("Array size: %s", array.size()));
+        int rnd = new Random().nextInt(array.size() - 1);
+        System.out.println(String.format("Index: %s", rnd));
+        int val = array.get(rnd);
+        array.remove(rnd);
+        return val;
     }
 
     private LocalDateTime generateRandomLocalDateTime() {

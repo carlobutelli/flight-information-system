@@ -80,8 +80,9 @@ the parameter is not passed the system catch the current time.
 POST /simulation/{airportId}/simulate
 ```
 
-#### Nice & Drawback
+#### Nice & drawback
 - The software is able to evolute the flights for the current day. By providing (or not) a custom time the flight's 
 table will be updated and so the response.
 - Delayed flights are added during the simulation process based on the probability set through th API.
-- The system does not catch the cancelled flight based on probability.
+- Cancelled flight are added based on probability.
+- All the operations are available through the API documentation in Swagger.
