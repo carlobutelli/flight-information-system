@@ -65,6 +65,23 @@ every airline on the given airport)
 - run simulations based on a given airport providing the custom current time (not required by default)
 
 #### Routes explanation
+- The following route generate scheduled flights for the current day
 ```bash
-/simulation/populate
+POST /simulation/flights/generate
 ```
+- The following route allow to clean the flights table deleting all the objects inside
+```bash
+DELETE /simulation/flights/
+```
+- The following is the route that actually starts the simulation process of the flight system on a given airport. It 
+takes an optional argument that is the customTime in order to allow the system to evolve and update the table of scheduled flights. If 
+the parameter is not passed the system catch the current time.
+```bash
+POST /simulation/{airportId}/simulate
+```
+
+#### Nice & Drawback
+- The software is able to evolute the flights for the current day. By providing (or not) a custom time the flight's 
+table will be updated and so the response.
+- Delayed flights are added during the simulation process based on the probability set through th API.
+- The system does not catch the cancelled flight based on probability.

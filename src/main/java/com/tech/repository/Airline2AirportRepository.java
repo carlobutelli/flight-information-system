@@ -11,4 +11,5 @@ public interface Airline2AirportRepository extends CrudRepository<Airline2Airpor
     Airline2Airport findByAirlineIdAndAirportId(int airlineId, String airportId);
 
     List<Airline2Airport> findByAirportId(String airportId);
+
 }

@@ -39,17 +39,17 @@ public class Airline extends AuditModel {
     @ApiModelProperty(example = "AZ")
     private String carrier;
 
-    @NotNull
+    @JsonIgnore
     @Range(min = 0, max = 1)
     @Column(precision=1, scale=2)
     @ApiModelProperty(example = "0.0")
-    private float delayedProbability;
+    private double delayedProbability = 0.0;
 
-    @NotNull
+    @JsonIgnore
     @Range(min = 0, max = 1)
     @Column(precision=1, scale=2)
     @ApiModelProperty(example = "0.0")
-    private float cancelledProbability;
+    private double cancelledProbability = 0.0;
 
     @ManyToMany(cascade = {
             CascadeType.PERSIST,
@@ -68,12 +68,10 @@ public class Airline extends AuditModel {
     public Airline() {
     }
 
-    public Airline(String icaoCode, String name, String carrier, float delayedProbability, float cancelledProbability) {
+    public Airline(String icaoCode, String name, String carrier) {
         this.icaoCode = icaoCode;
         this.name = name;
         this.carrier = carrier;
-        this.delayedProbability = delayedProbability;
-        this.cancelledProbability = cancelledProbability;
     }
 
     public int getId() {
@@ -96,19 +94,19 @@ public class Airline extends AuditModel {
         this.icaoCode = icaoCode;
     }
 
-    public float getDelayedProbability() {
+    public double getDelayedProbability() {
         return delayedProbability;
     }
 
-    public void setDelayedProbability(float delayedProbability) {
+    public void setDelayedProbability(double delayedProbability) {
         this.delayedProbability = delayedProbability;
     }
 
-    public float getCancelledProbability() {
+    public double getCancelledProbability() {
         return cancelledProbability;
     }
 
-    public void setCancelledProbability(float cancelledProbability) {
+    public void setCancelledProbability(double cancelledProbability) {
         this.cancelledProbability = cancelledProbability;
     }
 

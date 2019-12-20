@@ -9,28 +9,28 @@ public class ProbabilityPayload {
     @NotNull
     @Range(min = 0, max = 1)
     @ApiModelProperty(example = "0.0")
-    private float delayedProbability;
+    private double delayedProbability;
 
     @NotNull
     @Range(min = 0, max = 1)
     @ApiModelProperty(example = "0.0")
-    private float cancelledProbability;
+    private double cancelledProbability;
 
     public ProbabilityPayload() {}
 
-    public float getDelayedProbability() {
+    public double getDelayedProbability() {
         return delayedProbability;
     }
 
-    public void setDelayedProbability(float delayedProbability) {
+    public void setDelayedProbability(double delayedProbability) {
         this.delayedProbability = delayedProbability;
     }
 
-    public float getCancelledProbability() {
+    public double getCancelledProbability() {
         return cancelledProbability;
     }
 
-    public void setCancelledProbability(float cancelledProbability) {
+    public void setCancelledProbability(double cancelledProbability) {
         this.cancelledProbability = cancelledProbability;
     }
 }

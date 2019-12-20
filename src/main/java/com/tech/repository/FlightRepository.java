@@ -9,9 +9,15 @@ import java.util.List;
 
 @Repository
 public interface FlightRepository extends JpaRepository<Flight, Integer> {
+
     List<Flight> findAllBySourceAndDestination(String source, String destination);
+
     List<Flight> findAllBySource(String source);
+
     List<Flight> findAllByDestination(String destination);
+
+    @Query("select f from Flight f where f.fk_airline=:airlineId")
+    List<Flight> findAllFlightsByAirlineId(int airlineId);
 
     String queryArrivals = "SELECT f " +
                "FROM Flight f " +

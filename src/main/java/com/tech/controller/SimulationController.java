@@ -2,6 +2,7 @@ package com.tech.controller;
 
 import com.tech.api.responses.*;
 import com.tech.exception.ResourceNotFoundException;
+import com.tech.model.Airline;
 import com.tech.model.Airline2Airport;
 import com.tech.model.Flight;
 import com.tech.repository.Airline2AirportRepository;
@@ -173,16 +174,30 @@ public class SimulationController {
             }
             logInfoWithTransactionId(transactionId, String.format("requested simulation at %s", currentTime));
 
+            List<Integer> flightsToBeSetDelayed = getFlightsToBeSetDelayed(airportId);
+            log.info(String.format("Flights to be delayed: %s", flightsToBeSetDelayed));
+
             List<ArrivalsResponse> arrivalsResponseList = new ArrayList<>();
 
             List<Flight> arrivalFlights = flightRepository.findArrivalsByAirportScheduledForToday(airportId);
+
             for (Flight f: arrivalFlights) {
-                if(f.getScheduledTime().isBefore(currentTime)) {
-                    f.setActualTime(f.getScheduledTime());
-                    f.setStatus(Flight.StatusEnum.LANDED);
+                if(flightsToBeSetDelayed.contains(f.getFlightNumber())) {
+                    if(f.getScheduledTime().isBefore(currentTime)) {
+                        f.setActualTime(f.getScheduledTime().plusMinutes(20));
+                        f.setStatus(Flight.StatusEnum.DELAYED);
+                    } else {
+                        f.setEstimatedTime(f.getScheduledTime().plusMinutes(20));
+                        f.setStatus(Flight.StatusEnum.DELAYED);
+                    }
                 } else {
-                    f.setActualTime(null);
-                    f.setStatus(Flight.StatusEnum.SCHEDULED);
+                    if(f.getScheduledTime().isBefore(currentTime)) {
+                        f.setActualTime(f.getScheduledTime());
+                        f.setStatus(Flight.StatusEnum.LANDED);
+                    } else {
+                        f.setActualTime(null);
+                        f.setStatus(Flight.StatusEnum.SCHEDULED);
+                    }
                 }
                 Flight flight = flightRepository.save(f);
                 ArrivalsResponse ar = new ArrivalsResponse();
@@ -209,12 +224,22 @@ public class SimulationController {
 
             List<Flight> departureFlights = flightRepository.findDeparturesByAirportScheduledForToday(airportId);
             for (Flight f: departureFlights) {
-                if(f.getScheduledTime().isBefore(currentTime)) {
-                    f.setActualTime(f.getScheduledTime());
-                    f.setStatus(Flight.StatusEnum.DEPARTED);
+                if(flightsToBeSetDelayed.contains(f.getFlightNumber())) {
+                    if(f.getScheduledTime().isBefore(currentTime)) {
+                        f.setActualTime(f.getScheduledTime().plusMinutes(20));
+                        f.setStatus(Flight.StatusEnum.DELAYED);
+                    } else {
+                        f.setEstimatedTime(f.getScheduledTime().plusMinutes(20));
+                        f.setStatus(Flight.StatusEnum.DELAYED);
+                    }
                 } else {
-                    f.setActualTime(null);
-                    f.setStatus(Flight.StatusEnum.SCHEDULED);
+                    if(f.getScheduledTime().isBefore(currentTime)) {
+                        f.setActualTime(f.getScheduledTime());
+                        f.setStatus(Flight.StatusEnum.DEPARTED);
+                    } else {
+                        f.setActualTime(null);
+                        f.setStatus(Flight.StatusEnum.SCHEDULED);
+                    }
                 }
                 Flight flight = flightRepository.save(f);
                 DeparturesResponse dr = new DeparturesResponse();
@@ -263,6 +288,34 @@ public class SimulationController {
         }
     }
 
+    private List<Integer> getFlightsToBeSetDelayed(
+            @ApiParam(value = "Iata code airport", example = "FCO") @PathVariable String airportId) {
+
+        List<Integer> flightsToBeSetDelayed = new ArrayList<>();
+
+        List<Airline> airlines = airlineRepository.findAllAirlineByAirportId(airportId);
+
+        int numFlightsToBeDelayed = 0;
+        for (Airline airline : airlines) {
+            List<Flight> flights = flightRepository.findAllFlightsByAirlineId(airline.getId());
+            log.info("Size ====> " + flights.size());
+            int[] flightArray = new int[flights.size()];
+
+            if(airline.getDelayedProbability() != 0.0)
+                numFlightsToBeDelayed = (int) Math.round(airline.getDelayedProbability() * flights.size());
+            log.info("Flights to be delayed: " + numFlightsToBeDelayed);
+            for (int i = 0; i < flights.size(); i++) {
+                flightArray[i] = flights.get(i).getFlightNumber();
+            }
+
+            for (int i = 0; i < numFlightsToBeDelayed; i++) {
+                flightsToBeSetDelayed.add(getRandomFlightNumber(flightArray));
+            }
+
+        }
+        return flightsToBeSetDelayed;
+    }
+
     private String generateTimeForResponse(int hours, int minutes) {
         return String.format("%s:%s", hours, minutes);
     }
@@ -279,6 +332,11 @@ public class SimulationController {
         BaseResponse meta = new BaseResponse(transactionId, "ERROR", message, statusCode);
         ErrorResponse response = new ErrorResponse(meta);
         return ResponseEntity.status(statusCode).body(response);
+    }
+
+    private static int getRandomFlightNumber(int[] array) {
+        int rnd = new Random().nextInt(array.length);
+        return array[rnd];
     }
 
     private LocalDateTime generateRandomLocalDateTime() {
