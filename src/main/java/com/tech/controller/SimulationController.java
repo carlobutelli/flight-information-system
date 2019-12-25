@@ -189,6 +189,7 @@ public class SimulationController {
                 if(flightsToBeSetDelayed.contains(f.getFlightNumber())) {
                     if(f.getScheduledTime().isBefore(currentTime)) {
                         f.setActualTime(f.getScheduledTime().plusMinutes(20));
+                        f.setEstimatedTime(f.getActualTime());
                         f.setStatus(Flight.StatusEnum.DELAYED);
                     } else {
                         f.setEstimatedTime(f.getScheduledTime().plusMinutes(20));
@@ -234,6 +235,7 @@ public class SimulationController {
                 if(flightsToBeSetDelayed.contains(f.getFlightNumber())) {
                     if(f.getScheduledTime().isBefore(currentTime)) {
                         f.setActualTime(f.getScheduledTime().plusMinutes(20));
+                        f.setEstimatedTime(f.getActualTime());
                         f.setStatus(Flight.StatusEnum.DELAYED);
                     } else {
                         f.setEstimatedTime(f.getScheduledTime().plusMinutes(20));

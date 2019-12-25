@@ -10,6 +10,8 @@ import java.util.List;
 @Repository
 public interface FlightRepository extends JpaRepository<Flight, Integer> {
 
+    List<Flight> findAllByOrderByScheduledTimeAsc();
+
     List<Flight> findAllBySourceAndDestination(String source, String destination);
 
     List<Flight> findAllBySource(String source);

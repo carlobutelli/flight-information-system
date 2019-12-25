@@ -78,7 +78,7 @@ public class FlightController {
                     transactionId,
                     "flights successfully retrieved",
                     200);
-            List<Flight> flights = flightRepository.findAll();
+            List<Flight> flights = flightRepository.findAllByOrderByScheduledTimeAsc();
             ListDataResponse response = new ListDataResponse(meta, flights);
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {

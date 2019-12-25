@@ -19,7 +19,6 @@ import java.util.Set;
 public class Airline extends AuditModel {
 
     @Id
-    @JsonIgnore
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
@@ -39,13 +38,11 @@ public class Airline extends AuditModel {
     @ApiModelProperty(example = "AZ")
     private String carrier;
 
-    @JsonIgnore
     @Range(min = 0, max = 1)
     @Column(precision=1, scale=2)
     @ApiModelProperty(example = "0.0")
     private double delayedProbability = 0.0;
 
-    @JsonIgnore
     @Range(min = 0, max = 1)
     @Column(precision=1, scale=2)
     @ApiModelProperty(example = "0.0")
@@ -98,6 +95,7 @@ public class Airline extends AuditModel {
         return delayedProbability;
     }
 
+//    @JsonIgnore
     public void setDelayedProbability(double delayedProbability) {
         this.delayedProbability = delayedProbability;
     }
@@ -106,6 +104,7 @@ public class Airline extends AuditModel {
         return cancelledProbability;
     }
 
+//    @JsonIgnore
     public void setCancelledProbability(double cancelledProbability) {
         this.cancelledProbability = cancelledProbability;
     }

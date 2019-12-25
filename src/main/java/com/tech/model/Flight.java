@@ -54,7 +54,6 @@ public class Flight extends AuditModel {
     @NotNull
     private LocalDateTime scheduledTime;
 
-    @JsonIgnore
     @Column
     private LocalDateTime estimatedTime;
 
@@ -62,7 +61,6 @@ public class Flight extends AuditModel {
     private LocalDateTime actualTime;
 
     @Column
-    @JsonIgnore
     @Enumerated(EnumType.STRING)
     private StatusEnum status;
 
@@ -116,7 +114,6 @@ public class Flight extends AuditModel {
         return estimatedTime;
     }
 
-    @JsonIgnore
     public void setEstimatedTime(LocalDateTime estimatedTime) {
         this.estimatedTime = estimatedTime;
     }

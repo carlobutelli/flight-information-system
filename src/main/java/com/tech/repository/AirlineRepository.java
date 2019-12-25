@@ -18,4 +18,7 @@ public interface AirlineRepository extends JpaRepository<Airline, Integer> {
            "and (a.delayedProbability <> 0 or a.cancelledProbability <> 0)"
     )
     List<Airline> findAllAirlineByAirportId(String airportId);
+
+    @Query("SELECT a FROM Airline a WHERE a.id NOT IN (SELECT a2a FROM Airline2Airport a2a)")
+    List<Airline> findAirlineNotYetAssociatedToAirport();
 }
