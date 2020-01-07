@@ -3,6 +3,7 @@ package com.tech.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.validator.constraints.Range;
 
 import javax.persistence.*;
@@ -40,11 +41,13 @@ public class Airline extends AuditModel {
 
     @Range(min = 0, max = 1)
     @Column(precision=1, scale=2)
+    @ColumnDefault("0.0")
     @ApiModelProperty(example = "0.0")
     private double delayedProbability = 0.0;
 
     @Range(min = 0, max = 1)
     @Column(precision=1, scale=2)
+    @ColumnDefault("0.0")
     @ApiModelProperty(example = "0.0")
     private double cancelledProbability = 0.0;
 

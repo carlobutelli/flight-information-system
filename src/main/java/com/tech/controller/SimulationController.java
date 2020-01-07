@@ -57,7 +57,7 @@ public class SimulationController {
         try {
             logInfoWithTransactionId(transactionId, "init flight generation");
 
-            logInfoWithTransactionId(transactionId, "retrieving number of arrivals and departures");
+            logInfoWithTransactionId(transactionId, "retrieving number of arrivals/departures per airline");
             List<Airline2Airport> airline2Airports = airline2AirportRepository.findByAirportId(airportId);
             if (airline2Airports == null || airline2Airports.isEmpty()) {
                 throw new ResourceNotFoundException(String.format("airport %s not found", airportId));
@@ -69,6 +69,12 @@ public class SimulationController {
 
             // for each combination airline - airport generate flights at first all set to SCHEDULED
             for (Airline2Airport a2a : airline2Airports) {
+                if(a2a.isGenerated()) {
+                    log.info(
+                            String.format("number of arrivals/departures for airline %s already matched",
+                                    a2a.getAirlineId()));
+                    continue;
+                }
                 generateArrivalsAndDepartures(
                         transactionId,
                         airportId,
@@ -77,6 +83,8 @@ public class SimulationController {
                         a2a.getNumOfDepartures(),
                         a2a.getNumOfArrivals()
                 );
+                a2a.setGenerated(true);
+                airline2AirportRepository.save(a2a);
             }
 
             BaseResponse meta = new BaseResponse(
@@ -102,6 +110,7 @@ public class SimulationController {
         logInfoWithTransactionId(transactionId, "got request to clean data into flight table");
         try {
             flightRepository.deleteAll();
+            airline2AirportRepository.updateGeneratedToFalse();
             BaseResponse meta = new BaseResponse(
                     "DELETED",
                     transactionId,

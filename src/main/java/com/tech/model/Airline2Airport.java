@@ -2,6 +2,7 @@ package com.tech.model;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import org.hibernate.annotations.ColumnDefault;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -27,6 +28,11 @@ public class Airline2Airport implements Serializable {
     @Column(nullable = false)
     @ApiModelProperty(example = "3")
     private int numOfDepartures;
+
+    @Column(nullable = false)
+    @ColumnDefault("false")
+    @ApiModelProperty(example = "false")
+    private boolean generated;
 
     public Airline2Airport() {}
 
@@ -67,6 +73,14 @@ public class Airline2Airport implements Serializable {
 
     public void setNumOfDepartures(int numOfDepartures) {
         this.numOfDepartures = numOfDepartures;
+    }
+
+    public boolean isGenerated() {
+        return generated;
+    }
+
+    public void setGenerated(boolean generated) {
+        this.generated = generated;
     }
 
     @Override
