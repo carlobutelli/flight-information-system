@@ -275,8 +275,36 @@ public class SimulationController {
         }
     }
 
-    private List<DeparturesResponse> getDeparturesResponses(
-            @ApiParam(value = "Iata code airport", example = "FCO") @PathVariable String airportId) {
+    @GetMapping("/{airportId}/flights")
+    @ApiOperation(value = "Route to get simulated flights grouped by arrivals/departures")
+    @ApiResponses(value = {
+            @ApiResponse(code = 500, message = "internal server error", response = ErrorResponse.class),
+            @ApiResponse(code = 200, message = "successful", response = SimulationResponse.class)})
+    public ResponseEntity simulate(@PathVariable
+                                   @ApiParam(value = "Iata code airport", example = "FCO") String airportId) {
+        String transactionId = generateTransactionId();
+        try {
+            List<ArrivalsResponse> arrivalsResponseList = getArrivalsResponses(airportId);
+            List<DeparturesResponse> departuresResponseList = getDeparturesResponses(airportId);
+
+            BaseResponse meta = new BaseResponse(
+                    "OK",
+                    transactionId,
+                    "Simulated flights returned successfully",
+                    200);
+
+            SimulationResponse simulationResponse = new SimulationResponse();
+            simulationResponse.setMeta(meta);
+            simulationResponse.setArrivals(arrivalsResponseList);
+            simulationResponse.setDepartures(departuresResponseList);
+            return new ResponseEntity<>(simulationResponse, HttpStatus.OK);
+        } catch (Exception e) {
+            log.error(String.format("[SIMULATION] %s: error %s", transactionId, e.getLocalizedMessage()));
+            return generateErrorResponse(500, "internal server error", transactionId);
+        }
+    }
+
+    private List<DeparturesResponse> getDeparturesResponses(String airportId) {
         List<DeparturesResponse> departuresResponseList = new ArrayList<>();
         List<Flight> departures = flightRepository.findTodayDeparturesByAirportOrderByScheduledTimeAsc(airportId);
         for(Flight flight : departures) {
@@ -304,8 +332,7 @@ public class SimulationController {
         return departuresResponseList;
     }
 
-    private List<ArrivalsResponse> getArrivalsResponses(
-            @ApiParam(value = "Iata code airport", example = "FCO") @PathVariable String airportId) {
+    private List<ArrivalsResponse> getArrivalsResponses(String airportId) {
         List<ArrivalsResponse> arrivalsResponseList = new ArrayList<>();
         List<Flight> arrivals = flightRepository.findTodayArrivalsByAirportOrderByScheduledTimeAsc(airportId);
         for(Flight flight : arrivals) {
