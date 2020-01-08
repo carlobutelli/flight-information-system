@@ -184,10 +184,10 @@ public class SimulationController {
             }
             logInfoWithTransactionId(transactionId, String.format("requested simulation at %s", currentTime));
 
-            List<Integer> flightsToBeSetDelayed = getFlightsToBeSetDelayed(airportId).getDelayedFlights();
+            List<Integer> flightsToBeSetDelayed = getFlightsToBeSetDelayedOrCancelled(airportId).getDelayedFlights();
             log.info(String.format("==> Flights to be delayed: %s", flightsToBeSetDelayed));
 
-            List<Integer> flightsToBeSetCancelled = getFlightsToBeSetDelayed(airportId).getCancelledFlights();
+            List<Integer> flightsToBeSetCancelled = getFlightsToBeSetDelayedOrCancelled(airportId).getCancelledFlights();
             log.info(String.format("==> Flights to be cancelled: %s", flightsToBeSetCancelled));
 
             List<ArrivalsResponse> arrivalsResponseList = new ArrayList<>();
@@ -224,7 +224,7 @@ public class SimulationController {
                                 flight.getActualTime().getHour(),
                                 flight.getActualTime().getMinute())
                         );
-                    ar.setSource(flight.getDestination());
+                    ar.setSource(flight.getSource());
                     ar.setEstimatedTime(generateTimeForResponse(
                             flight.getEstimatedTime().getHour(),
                             flight.getEstimatedTime().getMinute())
@@ -309,7 +309,7 @@ public class SimulationController {
         }
     }
 
-    private DelayedCancelledArrays getFlightsToBeSetDelayed(
+    private DelayedCancelledArrays getFlightsToBeSetDelayedOrCancelled(
             @ApiParam(value = "Iata code airport", example = "FCO") @PathVariable String airportId) {
 
         List<Integer> flightsToBeSetDelayed = new ArrayList<>();
