@@ -34,6 +34,15 @@ public class DeparturesResponse {
         this.status = status;
     }
 
+    public DeparturesResponse(String flight, String destination, String scheduledTime, String estimatedTime,
+                              Flight.StatusEnum status) {
+        this.flight = flight;
+        this.destination = destination;
+        this.scheduledTime = scheduledTime;
+        this.estimatedTime = estimatedTime;
+        this.status = status;
+    }
+
     public String getFlight() {
         return flight;
     }

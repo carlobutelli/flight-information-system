@@ -190,8 +190,6 @@ public class SimulationController {
             List<Integer> flightsToBeSetCancelled = getFlightsToBeSetDelayedOrCancelled(airportId).getCancelledFlights();
             log.info(String.format("==> Flights to be cancelled: %s", flightsToBeSetCancelled));
 
-            List<ArrivalsResponse> arrivalsResponseList = new ArrayList<>();
-
             List<Flight> arrivalFlights = flightRepository.findArrivalsByAirportScheduledForToday(airportId);
 
             for (Flight f: arrivalFlights) {
@@ -199,44 +197,28 @@ public class SimulationController {
                     if(f.getScheduledTime().isBefore(currentTime)) {
                         f.setEstimatedTime(currentTime.plusMinutes(20));
                         f.setStatus(Flight.StatusEnum.DELAYED);
+                        f.setActualTime(null);
                     } else {
                         f.setEstimatedTime(f.getScheduledTime().plusMinutes(20));
                         f.setStatus(Flight.StatusEnum.DELAYED);
+                        f.setActualTime(null);
                     }
                 } else if(flightsToBeSetCancelled.contains(f.getFlightNumber())) {
                     f.setActualTime(null);
                     f.setStatus(Flight.StatusEnum.CANCELLED);
                 } else {
-                    if(f.getScheduledTime().isBefore(currentTime)) {
-                        f.setActualTime(f.getScheduledTime());
+                    if(f.getEstimatedTime().isBefore(currentTime)) {
+                        f.setActualTime(f.getEstimatedTime());
                         f.setStatus(Flight.StatusEnum.LANDED);
                     } else {
                         f.setActualTime(null);
                         f.setStatus(Flight.StatusEnum.SCHEDULED);
                     }
                 }
-                Flight flight = flightRepository.save(f);
-                ArrivalsResponse ar = new ArrivalsResponse();
-                    ar.setFlight(String.valueOf(f.getFlightNumber()));
-                    if(flight.getActualTime() != null)
-                        ar.setActualTime(generateTimeForResponse(
-                                flight.getActualTime().getHour(),
-                                flight.getActualTime().getMinute())
-                        );
-                    ar.setSource(flight.getSource());
-                    ar.setEstimatedTime(generateTimeForResponse(
-                            flight.getEstimatedTime().getHour(),
-                            flight.getEstimatedTime().getMinute())
-                    );
-                    ar.setScheduledTime(generateTimeForResponse(
-                            flight.getScheduledTime().getHour(),
-                            flight.getScheduledTime().getMinute())
-                    );
-                    ar.setStatus(flight.getStatus());
-                    arrivalsResponseList.add(ar);
+               flightRepository.save(f);
             }
 
-            List<DeparturesResponse> departuresResponseList = new ArrayList<>();
+            List<ArrivalsResponse> arrivalsResponseList = getArrivalsResponses(airportId);
 
             List<Flight> departureFlights = flightRepository.findDeparturesByAirportScheduledForToday(airportId);
             for (Flight f: departureFlights) {
@@ -244,42 +226,28 @@ public class SimulationController {
                     if(f.getScheduledTime().isBefore(currentTime)) {
                         f.setEstimatedTime(currentTime.plusMinutes(20));
                         f.setStatus(Flight.StatusEnum.DELAYED);
+                        f.setActualTime(null);
                     } else {
                         f.setEstimatedTime(f.getScheduledTime().plusMinutes(20));
                         f.setStatus(Flight.StatusEnum.DELAYED);
+                        f.setActualTime(null);
                     }
                 } else if(flightsToBeSetCancelled.contains(f.getFlightNumber())) {
                     f.setActualTime(null);
                     f.setStatus(Flight.StatusEnum.CANCELLED);
                 } else {
-                    if(f.getScheduledTime().isBefore(currentTime)) {
-                        f.setActualTime(f.getScheduledTime());
+                    if(f.getEstimatedTime().isBefore(currentTime)) {
+                        f.setActualTime(f.getEstimatedTime());
                         f.setStatus(Flight.StatusEnum.DEPARTED);
                     } else {
                         f.setActualTime(null);
                         f.setStatus(Flight.StatusEnum.SCHEDULED);
                     }
                 }
-                Flight flight = flightRepository.save(f);
-                DeparturesResponse dr = new DeparturesResponse();
-                dr.setFlight(String.valueOf(f.getFlightNumber()));
-                if(flight.getActualTime() != null)
-                    dr.setActualTime(generateTimeForResponse(
-                            flight.getActualTime().getHour(),
-                            flight.getActualTime().getMinute())
-                    );
-                dr.setDestination(flight.getDestination());
-                dr.setEstimatedTime(generateTimeForResponse(
-                        flight.getEstimatedTime().getHour(),
-                        flight.getEstimatedTime().getMinute())
-                );
-                dr.setScheduledTime(generateTimeForResponse(
-                        flight.getScheduledTime().getHour(),
-                        flight.getScheduledTime().getMinute())
-                );
-                dr.setStatus(flight.getStatus());
-                departuresResponseList.add(dr);
+                flightRepository.save(f);
             }
+
+            List<DeparturesResponse> departuresResponseList = getDeparturesResponses(airportId);
 
             if (departureFlights.isEmpty() && arrivalFlights.isEmpty()) {
                 log.error(String.format("[SIMULATION] %s: no data found", transactionId));
@@ -305,6 +273,64 @@ public class SimulationController {
             log.error(String.format("[SIMULATION] %s: error %s", transactionId, e.getLocalizedMessage()));
             return generateErrorResponse(500, "internal server error", transactionId);
         }
+    }
+
+    private List<DeparturesResponse> getDeparturesResponses(
+            @ApiParam(value = "Iata code airport", example = "FCO") @PathVariable String airportId) {
+        List<DeparturesResponse> departuresResponseList = new ArrayList<>();
+        List<Flight> departures = flightRepository.findTodayDeparturesByAirportOrderByScheduledTimeAsc(airportId);
+        for(Flight flight : departures) {
+            DeparturesResponse dr = new DeparturesResponse(
+                    String.valueOf(flight.getFlightNumber()),
+                    flight.getDestination(),
+                    generateTimeForResponse(
+                            flight.getScheduledTime().getHour(),
+                            flight.getScheduledTime().getMinute()
+                    ),
+                    generateTimeForResponse(
+                            flight.getEstimatedTime().getHour(),
+                            flight.getEstimatedTime().getMinute()
+                    ),
+                    flight.getStatus()
+
+            );
+            if(flight.getActualTime() != null)
+                dr.setActualTime(generateTimeForResponse(
+                        flight.getActualTime().getHour(),
+                        flight.getActualTime().getMinute())
+                );
+            departuresResponseList.add(dr);
+        }
+        return departuresResponseList;
+    }
+
+    private List<ArrivalsResponse> getArrivalsResponses(
+            @ApiParam(value = "Iata code airport", example = "FCO") @PathVariable String airportId) {
+        List<ArrivalsResponse> arrivalsResponseList = new ArrayList<>();
+        List<Flight> arrivals = flightRepository.findTodayArrivalsByAirportOrderByScheduledTimeAsc(airportId);
+        for(Flight flight : arrivals) {
+            ArrivalsResponse ar = new ArrivalsResponse(
+                    String.valueOf(flight.getFlightNumber()),
+                    flight.getSource(),
+                    generateTimeForResponse(
+                            flight.getScheduledTime().getHour(),
+                            flight.getScheduledTime().getMinute()
+                    ),
+                    generateTimeForResponse(
+                            flight.getEstimatedTime().getHour(),
+                            flight.getEstimatedTime().getMinute()
+                    ),
+                    flight.getStatus()
+
+            );
+            if(flight.getActualTime() != null)
+                ar.setActualTime(generateTimeForResponse(
+                        flight.getActualTime().getHour(),
+                        flight.getActualTime().getMinute())
+                );
+            arrivalsResponseList.add(ar);
+        }
+        return arrivalsResponseList;
     }
 
     private DelayedCancelledArrays getFlightsToBeSetDelayedOrCancelled(

@@ -28,6 +28,22 @@ public interface FlightRepository extends JpaRepository<Flight, Integer> {
     @Query(queryArrivals)
     List<Flight> findArrivalsByAirportScheduledForToday(String airport);
 
+    String queryArrivalsToday = "SELECT f " +
+            "FROM Flight f " +
+            "WHERE DATE(f.scheduledTime)=current_date " +
+            "AND f.destination=:airport " +
+            "ORDER BY f.scheduledTime ASC";
+    @Query(queryArrivalsToday)
+    List<Flight> findTodayArrivalsByAirportOrderByScheduledTimeAsc(String airport);
+
+    String queryDeparturesToday = "SELECT f " +
+            "FROM Flight f " +
+            "WHERE DATE(f.scheduledTime)=current_date " +
+            "AND f.source=:airport " +
+            "ORDER BY f.scheduledTime ASC";
+    @Query(queryDeparturesToday)
+    List<Flight> findTodayDeparturesByAirportOrderByScheduledTimeAsc(String airport);
+
     String queryDepartures = "SELECT f " +
             "FROM Flight f " +
             "WHERE DATE(f.scheduledTime)=current_date " +
