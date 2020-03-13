@@ -1,12 +1,12 @@
 # Flight System Information Simulator
-Flight System Information Simulator developed for assessment.
+Flight System Information Simulator .
 Documentation of this project is available [here](https://nameless-hamlet-24060.herokuapp.com/swagger)
 Frontend list of results available [here](http://flight-system-fe.herokuapp.com)
 
 # Environment
 The software in order to run needs a few env vars to be set
 ```bash
-export SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/assessment
+export SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/flight-system
 export SPRING_DATASOURCE_USERNAME=tech
 export SPRING_DATASOURCE_PASSWORD=d0nt4get
 ```

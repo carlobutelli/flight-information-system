@@ -9,6 +9,6 @@ services:
       - DB_EXTENSION=plpgsql,pg_trgm
       - POSTGRES_USER=tech
       - POSTGRES_PASSWORD=d0nt4get
-      - POSTGRES_DB=assessment
+      - POSTGRES_DB=flight-system
     ports:
       - "5432:5432"
